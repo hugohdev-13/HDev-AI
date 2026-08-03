@@ -1,0 +1,70 @@
+{
+  "name": "HDev AI RSS Import",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "manual-trigger",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "notes": "Use this trigger while validating the workflow. Replace it with Schedule Trigger after validation."
+    },
+    {
+      "parameters": { "url": "https://example.com/rss.xml" },
+      "id": "rss-read",
+      "name": "RSS Read",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1,
+      "position": [460, 300],
+      "notes": "Replace the example URL with the approved RSS source."
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "name": "external_id", "value": "={{ $json.guid || $json.link }}", "type": "string" },
+            { "name": "title", "value": "={{ $json.title }}", "type": "string" },
+            { "name": "summary", "value": "={{ $json.contentSnippet || $json.content }}", "type": "string" },
+            { "name": "content", "value": "={{ $json.content || $json.contentSnippet }}", "type": "string" },
+            { "name": "author", "value": "n8n", "type": "string" },
+            { "name": "status", "value": "draft", "type": "string" },
+            { "name": "source_url", "value": "={{ $json.link }}", "type": "string" }
+          ]
+        }
+      },
+      "id": "edit-fields",
+      "name": "Edit Fields",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [680, 300],
+      "notes": "Normalizes RSS properties to the HDev AI integration contract."
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:5000/api/integrations/articles",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [{ "name": "X-API-Key", "value": "CHANGE_ME_API_KEY" }] },
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}"
+      },
+      "id": "create-article",
+      "name": "Create Article",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [900, 300],
+      "notes": "Replace CHANGE_ME_API_KEY in n8n credentials or this field; never commit a real key."
+    }
+  ],
+  "connections": {
+    "Manual Trigger": { "main": [[{ "node": "RSS Read", "type": "main", "index": 0 }]] },
+    "RSS Read": { "main": [[{ "node": "Edit Fields", "type": "main", "index": 0 }]] },
+    "Edit Fields": { "main": [[{ "node": "Create Article", "type": "main", "index": 0 }]] }
+  },
+  "active": false,
+  "settings": {},
+  "versionId": "hdev-ai-rss-import-v1"
+}

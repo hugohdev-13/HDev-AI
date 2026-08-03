@@ -1,0 +1,20 @@
+.dashboard-header { margin-bottom: 2rem; }
+.dashboard-eyebrow { color: var(--primary); font-size: .75rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.dashboard-title { color: var(--text); font-size: clamp(1.75rem, 3vw, 2.25rem); font-weight: 700; letter-spacing: -.04em; margin: .25rem 0 .5rem; }
+.metric-card { background: var(--card); border: 1px solid var(--border-color); border-radius: var(--radius); box-shadow: var(--shadow-sm); height: 100%; padding: 1.5rem; transition: transform var(--transition), box-shadow var(--transition); }
+.metric-card:hover { box-shadow: var(--shadow); transform: translateY(-4px); }
+.metric-card__icon { align-items: center; background: var(--metric-bg); border-radius: 12px; color: var(--metric-color); display: inline-flex; font-size: 1.25rem; height: 46px; justify-content: center; width: 46px; }
+.metric-card__value { color: var(--text); font-size: 1.8rem; font-weight: 700; letter-spacing: -.04em; line-height: 1; margin: 1.4rem 0 .35rem; }
+.metric-card__label { color: var(--text-muted); font-size: .875rem; font-weight: 500; }
+.dashboard-panel { background: var(--card); border: 1px solid var(--border-color); border-radius: var(--radius); box-shadow: var(--shadow-sm); height: 100%; }
+.dashboard-panel__header { align-items: center; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; padding: 1.25rem 1.5rem; }
+.dashboard-panel__title { color: var(--text); font-size: 1rem; font-weight: 700; margin: 0; }
+.dashboard-panel__body { padding: 1.5rem; }
+.chart-container { height: 290px; position: relative; }
+.activity-item { align-items: flex-start; display: flex; gap: .875rem; padding: 1rem 0; }
+.activity-item + .activity-item { border-top: 1px solid var(--border-color); }
+.activity-item__icon { align-items: center; background: var(--primary-soft); border-radius: 50%; color: var(--primary); display: inline-flex; flex: 0 0 auto; height: 38px; justify-content: center; width: 38px; }
+.activity-item__title { color: var(--text); font-size: .875rem; font-weight: 600; margin: 0 0 .2rem; }
+.activity-item__meta { color: var(--text-muted); font-size: .75rem; margin: 0; }
+.empty-state { color: var(--text-muted); padding: 2rem 1rem; text-align: center; }
+.empty-state i { color: var(--primary); display: block; font-size: 2rem; margin-bottom: .75rem; }

@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+
+{# Compatibility layout for legacy module templates. #}
+{% block page_css %}{% block legacy_page_css %}{% endblock %}{% endblock %}
+{% block content %}{% block legacy_content %}{% endblock %}{% endblock %}
+{% block page_scripts %}{% block scripts %}{% endblock %}{% endblock %}

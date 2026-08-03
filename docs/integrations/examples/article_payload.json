@@ -1,0 +1,9 @@
+{
+  "external_id": "rss-example-001",
+  "title": "Automatización con n8n y Flask",
+  "summary": "Resumen recibido desde un flujo RSS.",
+  "content": "Contenido técnico para analizar automáticamente.",
+  "author": "n8n",
+  "status": "draft",
+  "source_url": "https://example.com/articles/n8n-flask"
+}

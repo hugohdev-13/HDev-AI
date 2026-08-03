@@ -1,0 +1,40 @@
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Python virtual environments
+venv/
+.venv/
+env/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Tests and coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Local application data
+instance/
+logs/
+exports/
+
+# Databases
+*.db
+*.sqlite
+*.sqlite3
+
+# Editors
+.vscode/
+.idea/
+
+# n8n local persistence
+n8n/data/
+
+# Operating system
+.DS_Store
+Thumbs.db

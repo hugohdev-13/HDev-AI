@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block title %}{{ 'Editar artículo' if article else 'Nuevo artículo' }} | HDev AI{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <span class="page-eyebrow">Gestión de contenido</span>
+        <h1 class="page-title">{{ 'Editar artículo' if article else 'Nuevo artículo' }}</h1>
+        <p class="text-muted mb-0">{{ 'Actualiza la información y el estado de publicación.' if article else 'Crea una nueva pieza de contenido para tu plataforma.' }}</p>
+    </div>
+    <a href="{{ url_for('articles.index') }}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i>Volver</a>
+</div>
+
+<section class="content-card article-editor">
+    <form method="post" action="{% if article %}{{ url_for('articles.update', article_id=article.id) }}{% else %}{{ url_for('articles.create') }}{% endif %}">
+        <div class="content-card__header"><h2 class="h6 mb-0 fw-bold">Información del artículo</h2></div>
+        <div class="content-card__body">
+            <div class="row g-4">
+                <div class="col-12"><label class="form-label" for="title">Título</label><input class="form-control" id="title" name="title" type="text" value="{{ article.title if article else '' }}" required></div>
+                <div class="col-md-8"><label class="form-label" for="author">Autor</label><input class="form-control" id="author" name="author" type="text" value="{{ article.author if article else '' }}" placeholder="Nombre del autor"></div>
+                <div class="col-md-4"><label class="form-label" for="status">Estado</label><select class="form-select" id="status" name="status"><option value="draft" {% if not article or article.status == 'draft' %}selected{% endif %}>Borrador</option><option value="published" {% if article and article.status == 'published' %}selected{% endif %}>Publicado</option></select></div>
+                <div class="col-12"><label class="form-label" for="summary">Resumen</label><textarea class="form-control" id="summary" name="summary" rows="3" placeholder="Describe brevemente el artículo">{{ article.summary if article else '' }}</textarea></div>
+                <div class="col-12"><label class="form-label" for="content">Contenido</label><textarea class="form-control" id="content" name="content" rows="10" placeholder="Escribe el contenido del artículo">{{ article.content if article else '' }}</textarea></div>
+            </div>
+        </div>
+        <footer class="content-card__footer"><a href="{{ url_for('articles.index') }}" class="btn btn-light border">Cancelar</a><button class="btn btn-primary" type="submit"><i class="bi bi-check2 me-1"></i>{{ 'Guardar cambios' if article else 'Crear artículo' }}</button></footer>
+    </form>
+</section>
+{% endblock %}

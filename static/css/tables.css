@@ -1,0 +1,5 @@
+.table-responsive { border: 1px solid var(--border-color); border-radius: 12px; }
+.table { margin-bottom: 0; }
+.table thead th { background: var(--surface-muted); border-bottom: 1px solid var(--border-color); color: var(--text-muted); font-size: .75rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+.table > :not(caption) > * > * { border-color: var(--border-color); padding: .9rem 1rem; }
+.table-hover > tbody > tr:hover > * { background: var(--primary-soft); }

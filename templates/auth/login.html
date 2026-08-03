@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Iniciar sesión | HDev AI</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/variables.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/forms.css') }}">
+</head>
+<body class="auth-page">
+    <main class="auth-layout">
+        <section class="auth-panel d-none d-lg-flex">
+            <div class="auth-panel__content">
+                <a class="auth-brand" href="{{ url_for('auth.login') }}"><span class="auth-brand__mark"><i class="bi bi-cpu-fill"></i></span>HDev AI</a>
+                <div class="auth-panel__copy">
+                    <span class="auth-panel__eyebrow">HDev AI – Enterprise AI Content Management Platform</span>
+                    <h1>Gestiona tu contenido con inteligencia.</h1>
+                    <p>Centraliza artículos, fuentes y conocimiento en una plataforma impulsada por inteligencia artificial para descubrir, enriquecer y gestionar contenido de desarrollo de software y tecnología.</p>
+                </div>
+                <p class="auth-panel__footer">© {{ current_year|default(2026) }} HDev AI</p>
+            </div>
+        </section>
+        <section class="auth-form-panel">
+            <div class="auth-card">
+                <div class="d-lg-none auth-brand auth-brand--dark mb-5"><span class="auth-brand__mark"><i class="bi bi-cpu-fill"></i></span>HDev AI</div>
+                <span class="auth-panel__eyebrow">Acceso seguro</span>
+                <h2 class="auth-card__title">Bienvenido de nuevo</h2>
+                <p class="text-muted mb-4">Ingresa tus credenciales para continuar.</p>
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} d-flex align-items-center gap-2" role="alert"><i class="bi bi-exclamation-triangle-fill"></i><span>{{ message }}</span></div>
+                    {% endfor %}
+                {% endwith %}
+                <form method="post" novalidate>
+                    <div class="mb-3">
+                        <label class="form-label" for="email">Correo electrónico</label>
+                        <div class="input-group auth-input-group"><span class="input-group-text"><i class="bi bi-envelope"></i></span><input class="form-control" id="email" name="email" type="email" value="{{ request.form.get('email', '') }}" autocomplete="email" placeholder="nombre@empresa.com" required autofocus></div>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label" for="password">Contraseña</label>
+                        <div class="input-group auth-input-group"><span class="input-group-text"><i class="bi bi-lock"></i></span><input class="form-control" id="password" name="password" type="password" autocomplete="current-password" placeholder="Ingresa tu contraseña" required></div>
+                    </div>
+                    <button class="btn btn-primary auth-submit w-100" type="submit">Iniciar sesión <i class="bi bi-arrow-right ms-1"></i></button>
+                </form>
+            </div>
+        </section>
+    </main>
+</body>
+</html>
