@@ -29,6 +29,7 @@ class Config:
         self.SQLALCHEMY_ENGINE_OPTIONS = {"pool_pre_ping": True, "pool_recycle": 1800}
         self.SESSION_COOKIE_HTTPONLY = True
         self.SESSION_COOKIE_SAMESITE = "Lax"
+        self.LOGIN_SESSION_PROTECTION = "basic"
 
     @staticmethod
     def _database_uri() -> str:
@@ -59,6 +60,7 @@ class DevelopmentConfig(Config):
         super().__init__()
         self.DEBUG = _boolean("FLASK_DEBUG", True)
         self.SESSION_COOKIE_SECURE = False
+        self.LOGIN_SESSION_PROTECTION = "strong"
 
 
 class ProductionConfig(Config):
@@ -68,6 +70,9 @@ class ProductionConfig(Config):
         super().__init__()
         self.DEBUG = False
         self.SESSION_COOKIE_SECURE = True
+        # Azure can change the proxy-observed client address between requests.
+        # ``basic`` preserves authentication while still marking the session stale.
+        self.LOGIN_SESSION_PROTECTION = "basic"
 
 
 class TestingConfig(Config):

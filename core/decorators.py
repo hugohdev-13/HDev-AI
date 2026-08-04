@@ -36,20 +36,20 @@ def permission_required(permission_name: str) -> Callable:
                     )
                     abort(403)
 
-                if AuthorizationService.has_permission(current_user, permission_name):
+                granted = AuthorizationService.has_permission(current_user, permission_name)
+                if granted:
                     logger.info(
                         "Permission granted user_id=%s permission=%s",
                         current_user.id,
                         permission_name,
                     )
-                    return view_function(*args, **kwargs)
-
-                logger.warning(
-                    "Permission denied user_id=%s permission=%s",
-                    current_user.id,
-                    permission_name,
-                )
-                abort(403)
+                else:
+                    logger.warning(
+                        "Permission denied user_id=%s permission=%s",
+                        current_user.id,
+                        permission_name,
+                    )
+                    abort(403)
             except Exception as error:
                 if getattr(error, "code", None) == 403:
                     raise
@@ -59,6 +59,10 @@ def permission_required(permission_name: str) -> Callable:
                     permission_name,
                 )
                 abort(403)
+
+            # Keep the view outside authorization error handling: a database,
+            # template, or dashboard error must remain a 500, never a false 403.
+            return view_function(*args, **kwargs)
 
         return wrapped_view
 

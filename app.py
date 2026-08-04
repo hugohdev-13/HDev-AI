@@ -1,6 +1,7 @@
 import logging
 
 from flask import Flask, render_template, request
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 from config import get_config
 
@@ -32,6 +33,9 @@ def create_app(config_object=None):
     app = Flask(__name__)
 
     app.config.from_object(config_object or get_config())
+    if app.config.get("APP_ENV") == "production":
+        # Azure App Service terminates TLS and forwards one trusted proxy hop.
+        app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
     logging.basicConfig(
         level=getattr(logging, app.config["LOG_LEVEL"], logging.INFO),
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
@@ -47,7 +51,7 @@ def create_app(config_object=None):
     login_manager.login_view = "auth.login"
     login_manager.login_message = "Debes iniciar sesión para continuar."
     login_manager.login_message_category = "warning"
-    login_manager.session_protection = "strong"
+    login_manager.session_protection = app.config["LOGIN_SESSION_PROTECTION"]
 
     app.register_blueprint(home_bp)
     app.register_blueprint(api_articles)
