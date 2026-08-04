@@ -1,6 +1,7 @@
 """Application operations for article CRUD and optional automatic analysis."""
 
 from dataclasses import dataclass
+from datetime import datetime, timezone
 import logging
 from typing import Any
 
@@ -12,6 +13,13 @@ from services.automatic_analysis_service import AutomaticAnalysisResult, Automat
 
 
 logger = logging.getLogger(__name__)
+
+
+class ArticleValidationError(ValueError):
+    """Business validation error with field-specific Spanish messages."""
+    def __init__(self, errors: dict[str, str]):
+        self.errors = errors
+        super().__init__("Datos de artículo inválidos")
 
 @dataclass(slots=True)
 class ArticleUpdateResult:
@@ -42,6 +50,7 @@ class ArticleService:
     @staticmethod
     def create_article(data: dict[str, Any]) -> Article:
         """Create and commit an article before any automatic analysis begins."""
+        data = ArticleService.normalize_and_validate(data)
         title = data["title"]
         base_slug = slugify(title)
         slug = base_slug
@@ -104,6 +113,7 @@ class ArticleService:
         article = ArticleRepository.get_by_id(article_id)
         if article is None:
             return ArticleUpdateResult(None, set())
+        data = ArticleService.normalize_and_validate(data)
         changed_fields: set[str] = set()
         for field_name in ("title", "author", "summary", "content", "status"):
             current_value = getattr(article, field_name)
@@ -111,6 +121,9 @@ class ArticleService:
             if not ArticleService._values_equivalent(current_value, new_value):
                 setattr(article, field_name, new_value)
                 changed_fields.add(field_name)
+        if article.status == "published" and article.published_at is None:
+            article.published_at = datetime.now(timezone.utc).replace(tzinfo=None)
+            changed_fields.add("published_at")
         ArticleRepository.update()
         return ArticleUpdateResult(article, changed_fields)
 
@@ -124,8 +137,24 @@ class ArticleService:
         return ArticleMutationResult(update_result.article, coordinator.analyze_after_update(update_result.article, update_result.changed_fields), update_result.changed_fields)
 
     @staticmethod
-    def search_articles(title=None):
-        return ArticleRepository.search(title)
+    def search_articles(search_term=None):
+        return ArticleRepository.search((search_term or "").strip())
+
+    @staticmethod
+    def get_paginated_articles(search_term: str, page: int):
+        return ArticleRepository.paginate((search_term or "").strip(), page, 10)
+
+    @staticmethod
+    def normalize_and_validate(data: dict[str, Any]) -> dict[str, Any]:
+        """Normalize form input and enforce article business invariants."""
+        normalized = {field: (value.strip() if isinstance(value, str) else value) for field, value in data.items()}
+        errors = {}
+        title, content, status = normalized.get("title", ""), normalized.get("content", ""), normalized.get("status", "draft")
+        if not isinstance(title, str) or not 3 <= len(title) <= 250: errors["title"] = "El título debe tener entre 3 y 250 caracteres."
+        if not isinstance(content, str) or not content: errors["content"] = "El contenido es obligatorio."
+        if status not in {"draft", "published", "archived"}: errors["status"] = "El estado seleccionado no es válido."
+        if errors: raise ArticleValidationError(errors)
+        return normalized
 
     @staticmethod
     def _values_equivalent(current_value: Any, new_value: Any) -> bool:

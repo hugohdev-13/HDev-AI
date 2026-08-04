@@ -7,7 +7,7 @@ from core.ai_status import AIProcessingStatus
 from core.audit import log_audit_event
 from core.decorators import permission_required
 from core.permissions import Permissions
-from services.article_service import ArticleService
+from services.article_service import ArticleService, ArticleValidationError
 
 
 articles_bp = Blueprint("articles", __name__, url_prefix="/articles")
@@ -17,10 +17,9 @@ articles_bp = Blueprint("articles", __name__, url_prefix="/articles")
 @login_required
 @permission_required(Permissions.ARTICLES_VIEW)
 def index():
-    search = request.args.get("search", "")
+    search = request.args.get("search", "").strip()
     page = request.args.get("page", 1, type=int)
-    query = ArticleService.search_articles(search)
-    pagination = query.paginate(page=page, per_page=10, error_out=False)
+    pagination = ArticleService.get_paginated_articles(search, page)
     return render_template("articles/index.html", articles=pagination.items, pagination=pagination, search=search)
 
 
@@ -35,7 +34,11 @@ def new():
 @login_required
 @permission_required(Permissions.ARTICLES_CREATE)
 def create():
-    result = ArticleService.create_article_with_analysis(_article_form_data())
+    data = _article_form_data()
+    try: result = ArticleService.create_article_with_analysis(data)
+    except ArticleValidationError as error:
+        for message in error.errors.values(): flash(message, "danger")
+        return render_template("articles/form.html", article=data), 400
     log_audit_event("article.created", user_id=current_user.id, article_id=result.article.id)
     if result.ai_analysis.status == AIProcessingStatus.COMPLETED:
         flash("Artículo creado y analizado correctamente.", "success")
@@ -61,7 +64,12 @@ def edit(article_id):
 @login_required
 @permission_required(Permissions.ARTICLES_EDIT)
 def update(article_id):
-    result = ArticleService.update_article_with_analysis(article_id, _article_form_data())
+    data = _article_form_data()
+    try: result = ArticleService.update_article_with_analysis(article_id, data)
+    except ArticleValidationError as error:
+        for message in error.errors.values(): flash(message, "danger")
+        data["id"] = article_id
+        return render_template("articles/form.html", article=data), 400
     if result is None:
         flash("No se encontró el artículo.", "danger")
         return redirect(url_for("articles.index"))

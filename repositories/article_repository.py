@@ -1,3 +1,5 @@
+from sqlalchemy import or_
+
 from models import Article
 from extensions import db
 
@@ -42,15 +44,15 @@ class ArticleRepository:
         return Article.query.filter_by(source_url=source_url).first()
 
     @staticmethod
-    def search(title=None):
-
+    def search(search_term: str | None = None):
+        """Search safely across CMS text fields using SQL Server-compatible ILIKE."""
         query = Article.query
+        if search_term:
+            pattern = f"%{search_term}%"
+            query = query.filter(or_(Article.title.ilike(pattern), Article.author.ilike(pattern), Article.summary.ilike(pattern), Article.content.ilike(pattern)))
+        return query.order_by(Article.created_at.desc(), Article.id.desc())
 
-        if title:
-            query = query.filter(
-                Article.title.ilike(f"%{title}%")
-            )
-
-        return query.order_by(
-            Article.created_at.desc()
-        )
+    @staticmethod
+    def paginate(search_term: str, page: int, per_page: int = 10):
+        """Return bounded pagination and avoid errors for non-existent pages."""
+        return ArticleRepository.search(search_term).paginate(page=max(page, 1), per_page=per_page, error_out=False)
