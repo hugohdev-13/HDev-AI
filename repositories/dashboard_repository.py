@@ -1,63 +1,55 @@
-from calendar import month_abbr
+"""Read-only SQLAlchemy queries used by the enterprise dashboard."""
 
-from sqlalchemy import extract, func
+import json
+from collections import Counter
 
-from models import Article, Category, Source, User
+from sqlalchemy import func, select
+
+from core.ai_status import AIProcessingStatus
+from extensions import db
+from models import Article, ArticleAnalysis, Source, User
 
 
 class DashboardRepository:
-    @staticmethod
-    def total_articles():
-        return Article.query.count()
+    """Encapsulate dashboard queries without coupling them to Flask routes."""
 
     @staticmethod
-    def total_categories():
-        return Category.query.count()
+    def _count(statement) -> int:
+        return int(db.session.scalar(statement) or 0)
+
+    @classmethod
+    def total_articles(cls): return cls._count(select(func.count()).select_from(Article))
+    @classmethod
+    def published_articles(cls): return cls._count(select(func.count()).where(Article.status == "published"))
+    @classmethod
+    def draft_articles(cls): return cls._count(select(func.count()).where(Article.status == "draft"))
+    @classmethod
+    def analyzed_articles(cls): return cls._count(select(func.count()).where(ArticleAnalysis.status == AIProcessingStatus.COMPLETED))
+    @classmethod
+    def total_users(cls): return cls._count(select(func.count()).select_from(User))
+    @classmethod
+    def active_users(cls): return cls._count(select(func.count()).where(User.is_active.is_(True)))
+    @classmethod
+    def total_sources(cls): return cls._count(select(func.count()).select_from(Source))
 
     @staticmethod
-    def total_sources():
-        return Source.query.count()
+    def recent_articles(limit: int = 5):
+        statement = select(Article.id, Article.title, Article.status, Article.created_at).order_by(Article.created_at.desc(), Article.id.desc()).limit(limit)
+        return [dict(row._mapping) for row in db.session.execute(statement)]
 
     @staticmethod
-    def total_users():
-        return User.query.count()
+    def article_status_distribution():
+        statement = select(Article.status, func.count(Article.id).label("count")).group_by(Article.status)
+        return [{"status": row.status or "unknown", "count": int(row.count or 0)} for row in db.session.execute(statement)]
 
     @staticmethod
-    def latest_articles(limit=5):
-        return (
-            Article.query.with_entities(
-                Article.id,
-                Article.title,
-                Article.created_at,
-            )
-            .order_by(Article.created_at.desc())
-            .limit(limit)
-            .all()
-        )
-
-    @staticmethod
-    def articles_by_month():
-        rows = (
-            Article.query.with_entities(
-                extract("year", Article.created_at).label("year"),
-                extract("month", Article.created_at).label("month"),
-                func.count(Article.id).label("count"),
-            )
-            .group_by(
-                extract("year", Article.created_at),
-                extract("month", Article.created_at),
-            )
-            .order_by(
-                extract("year", Article.created_at),
-                extract("month", Article.created_at),
-            )
-            .all()
-        )
-
-        return [
-            {
-                "month": month_abbr[int(row.month)],
-                "count": int(row.count),
-            }
-            for row in rows
-        ]
+    def top_technologies(limit: int = 8):
+        counts = Counter()
+        for value in db.session.scalars(select(ArticleAnalysis.technologies_json).where(ArticleAnalysis.technologies_json.is_not(None))):
+            try:
+                technologies = json.loads(value)
+            except (TypeError, json.JSONDecodeError):
+                continue
+            if isinstance(technologies, list):
+                counts.update(str(item).strip() for item in technologies if str(item).strip())
+        return [{"technology": name, "count": count} for name, count in counts.most_common(limit)]

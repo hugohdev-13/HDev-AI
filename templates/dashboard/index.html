@@ -1,82 +1,11 @@
 {% extends "base.html" %}
-
 {% block title %}Dashboard | HDev AI{% endblock %}
-
-{% block page_css %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
-{% endblock %}
-
+{% block page_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">{% endblock %}
 {% block content %}
-<section class="dashboard-header">
-    <span class="dashboard-eyebrow">Resumen operativo</span>
-    <h1 class="dashboard-title">Bienvenido, {{ current_user.first_name }}.</h1>
-    <p class="text-muted mb-0">Aquí tienes una vista general de tu contenido y organización.</p>
-</section>
-
-{% set cards = [
-    (metrics.articles, 'Artículos', 'bi-file-earmark-text', '#2563eb', '#eff6ff'),
-    (metrics.categories, 'Categorías', 'bi-tags', '#7c3aed', '#f5f3ff'),
-    (metrics.sources, 'Fuentes', 'bi-globe2', '#0891b2', '#ecfeff'),
-    (metrics.users, 'Usuarios', 'bi-people', '#059669', '#ecfdf5')
-] %}
-
-<section class="row g-4 mb-4" aria-label="Métricas de contenido">
-    {% for total, label, icon, color, background in cards %}
-    <div class="col-sm-6 col-xl-3">
-        <article class="metric-card" style="--metric-color: {{ color }}; --metric-bg: {{ background }};">
-            <span class="metric-card__icon"><i class="bi {{ icon }}"></i></span>
-            <p class="metric-card__value">{{ total }}</p>
-            <p class="metric-card__label mb-0">Total de {{ label|lower }}</p>
-        </article>
-    </div>
-    {% endfor %}
-</section>
-
-<section class="row g-4">
-    <div class="col-xl-8">
-        <article class="dashboard-panel">
-            <header class="dashboard-panel__header">
-                <div>
-                    <h2 class="dashboard-panel__title">Artículos creados por mes</h2>
-                    <p class="text-muted small mb-0 mt-1">Tendencia basada en registros reales.</p>
-                </div>
-                <span class="badge text-bg-light">{{ metrics.articles }} total</span>
-            </header>
-            <div class="dashboard-panel__body">
-                <div class="chart-container">
-                    <canvas id="articlesByMonthChart" data-chart='{{ metrics.chart|tojson }}'></canvas>
-                </div>
-            </div>
-        </article>
-    </div>
-    <div class="col-xl-4">
-        <article class="dashboard-panel">
-            <header class="dashboard-panel__header">
-                <h2 class="dashboard-panel__title">Actividad reciente</h2>
-                <span class="badge text-bg-light">En vivo</span>
-            </header>
-            <div class="dashboard-panel__body py-2">
-                {% for article in metrics.latest_articles %}
-                <div class="activity-item">
-                    <span class="activity-item__icon"><i class="bi bi-file-earmark-plus"></i></span>
-                    <div>
-                        <p class="activity-item__title text-truncate">{{ article.title }}</p>
-                        <p class="activity-item__meta">Artículo creado{% if article.created_at %} · {{ article.created_at.strftime('%d/%m/%Y') }}{% endif %}</p>
-                    </div>
-                </div>
-                {% else %}
-                <div class="empty-state">
-                    <i class="bi bi-activity"></i>
-                    <p class="mb-0">La actividad aparecerá aquí cuando haya contenido nuevo.</p>
-                </div>
-                {% endfor %}
-            </div>
-        </article>
-    </div>
-</section>
-{% endblock %}
-
-{% block page_scripts %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
-<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+<section class="dashboard-header"><span class="dashboard-eyebrow">Resumen operativo</span><h1 class="dashboard-title">Bienvenido, {{ current_user.first_name }}.</h1></section>
+{% set cards = [(dashboard_data.total_articles,'Total de artículos','bi-file-earmark-text'),(dashboard_data.published_articles,'Publicados','bi-check2-circle'),(dashboard_data.draft_articles,'Borradores','bi-pencil-square'),(dashboard_data.analyzed_articles,'Analizados por IA','bi-stars'),(dashboard_data.active_users,'Usuarios activos','bi-people'),(dashboard_data.total_sources,'Fuentes','bi-globe2')] %}
+<section class="row g-4 mb-4">{% for total,label,icon in cards %}<div class="col-sm-6 col-xl-4"><article class="metric-card"><span class="metric-card__icon"><i class="bi {{ icon }}"></i></span><p class="metric-card__value">{{ total }}</p><p class="metric-card__label mb-0">{{ label }}</p></article></div>{% endfor %}</section>
+<section class="row g-4"><div class="col-xl-6"><article class="dashboard-panel"><header class="dashboard-panel__header"><h2 class="dashboard-panel__title">Últimos artículos</h2></header><div class="dashboard-panel__body">{% for article in dashboard_data.recent_articles %}<div class="activity-item"><span class="activity-item__icon"><i class="bi bi-file-earmark-text"></i></span><div><p class="activity-item__title">{{ article.title }}</p><p class="activity-item__meta">{{ article.status }}{% if article.created_at %} · {{ article.created_at.strftime('%d/%m/%Y') }}{% endif %}</p></div></div>{% else %}<div class="empty-state"><p class="mb-0">No hay artículos recientes</p></div>{% endfor %}</div></article></div>
+<div class="col-xl-3"><article class="dashboard-panel"><header class="dashboard-panel__header"><h2 class="dashboard-panel__title">Distribución por estado</h2></header><div class="dashboard-panel__body">{% for item in dashboard_data.article_status_distribution %}<p class="d-flex justify-content-between"><span>{{ item.status }}</span><strong>{{ item.count }}</strong></p>{% else %}<p class="text-muted mb-0">No hay datos de estado</p>{% endfor %}</div></article></div>
+<div class="col-xl-3"><article class="dashboard-panel"><header class="dashboard-panel__header"><h2 class="dashboard-panel__title">Tecnologías más mencionadas</h2></header><div class="dashboard-panel__body">{% for item in dashboard_data.top_technologies %}<p class="d-flex justify-content-between"><span>{{ item.technology }}</span><strong>{{ item.count }}</strong></p>{% else %}<p class="text-muted mb-0">No hay tecnologías analizadas</p>{% endfor %}</div></article></div></section>
 {% endblock %}

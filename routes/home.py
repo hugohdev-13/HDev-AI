@@ -13,6 +13,5 @@ home_bp = Blueprint("home", __name__)
 @login_required
 @permission_required(Permissions.DASHBOARD_VIEW)
 def index():
-    metrics = DashboardService.get_dashboard_metrics()
-
-    return render_template("dashboard/index.html", metrics=metrics)
+    dashboard_data = DashboardService.get_dashboard_data()
+    return render_template("dashboard/index.html", dashboard_data=dashboard_data)
