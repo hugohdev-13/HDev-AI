@@ -26,6 +26,7 @@ from routes.api_articles import api_articles
 from routes.api_integrations import api_integrations
 from routes.auth import auth_bp
 from routes.health import health_bp
+from routes.public import public_bp
 
 
 def create_app(config_object=None):
@@ -53,6 +54,7 @@ def create_app(config_object=None):
     login_manager.login_message_category = "warning"
     login_manager.session_protection = app.config["LOGIN_SESSION_PROTECTION"]
 
+    app.register_blueprint(public_bp)
     app.register_blueprint(home_bp)
     app.register_blueprint(api_articles)
     app.register_blueprint(api_integrations)

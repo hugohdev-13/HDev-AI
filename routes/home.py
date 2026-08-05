@@ -14,7 +14,7 @@ home_bp = Blueprint(
 )
 
 
-@home_bp.get("/")
+@home_bp.get("/dashboard")
 @login_required
 @permission_required(Permissions.DASHBOARD_VIEW)
 def index():
