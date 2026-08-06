@@ -32,7 +32,8 @@ class Article(db.Model):
     category_id = db.Column(
         db.Integer,
         db.ForeignKey("categories.id"),
-        nullable=True
+        nullable=True,
+        index=True,
     )
 
     source_id = db.Column(
@@ -83,6 +84,7 @@ class Article(db.Model):
         uselist=False,
         cascade="all, delete-orphan"
     )
+    category = db.relationship("Category", back_populates="articles")
 
     def __repr__(self):
         return f"<Article {self.title}>"

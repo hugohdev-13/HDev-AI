@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block title %}Categorías | HDev AI{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <span class="page-eyebrow">Administración</span>
+        <h1 class="page-title">Categorías</h1>
+        <p class="text-muted mb-0">Organiza y clasifica el contenido de HDev AI.</p>
+    </div>
+    <a class="btn btn-primary" href="{{ url_for('categories.new') }}">
+        <i class="bi bi-plus-lg me-1"></i>Nueva categoría
+    </a>
+</div>
+
+<section class="content-card">
+    <header class="content-card__header content-card__header--stack-sm">
+        <div>
+            <h2 class="h6 mb-1 fw-bold">Listado de categorías</h2>
+            <p class="text-muted small mb-0">{{ total|default(0) }} categoría{{ '' if total|default(0) == 1 else 's' }} en total</p>
+        </div>
+        <form class="article-search" method="get" role="search">
+            <label class="visually-hidden" for="search">Buscar categorías</label>
+            <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-search"></i></span>
+                <input class="form-control" id="search" name="search" type="search" value="{{ search|default('') }}" placeholder="Buscar por nombre, slug o descripción...">
+                <button class="btn btn-light border" type="submit">Buscar</button>
+                {% if search %}<a class="btn btn-outline-secondary" href="{{ url_for('categories.index') }}">Limpiar</a>{% endif %}
+            </div>
+        </form>
+    </header>
+
+    <div class="content-card__body p-0">
+        {% if categories %}
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead><tr><th>Categoría</th><th>Slug</th><th>Color</th><th>Estado</th><th>Artículos</th><th>Actualizada</th><th class="text-end">Acciones</th></tr></thead>
+                <tbody>{% for category in categories %}
+                    <tr>
+                        <td><div class="d-flex gap-2 align-items-start"><i class="bi {{ category.icon }} fs-5 text-primary"></i><div><strong>{{ category.name }}</strong><small class="d-block text-muted">{{ category.description or 'Sin descripción' }}</small></div></div></td>
+                        <td><code>{{ category.slug }}</code></td>
+                        <td><span class="d-inline-block rounded-circle me-1" style="width:12px;height:12px;background-color:{{ category.color }}"></span>{{ category.color }}</td>
+                        <td><span class="badge text-bg-{{ 'success' if category.is_active else 'secondary' }}">{{ 'Activa' if category.is_active else 'Inactiva' }}</span></td>
+                        <td>{{ category.article_count|default(0, true) }}</td>
+                        <td class="text-muted small">{{ category.updated_at.strftime('%d/%m/%Y') if category.updated_at else '—' }}</td>
+                        <td><div class="d-flex gap-1 justify-content-end"><a class="btn btn-sm btn-light border" href="{{ url_for('categories.edit', category_id=category.id) }}" aria-label="Editar {{ category.name }}"><i class="bi bi-pencil"></i></a><form method="post" action="{{ url_for('categories.toggle', category_id=category.id) }}"><button class="btn btn-sm btn-light border" type="submit">{{ 'Desactivar' if category.is_active else 'Activar' }}</button></form><form method="post" action="{{ url_for('categories.delete', category_id=category.id) }}" onsubmit="return confirm('¿Seguro que deseas eliminar esta categoría?');"><button class="btn btn-sm btn-light border text-danger" type="submit" aria-label="Eliminar {{ category.name }}"><i class="bi bi-trash"></i></button></form></div></td>
+                    </tr>{% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% if pagination and pagination.pages > 1 %}
+        <nav class="p-3" aria-label="Paginación de categorías"><ul class="pagination justify-content-center mb-0"><li class="page-item {% if not pagination.has_prev %}disabled{% endif %}"><a class="page-link" href="{{ url_for('categories.index', page=pagination.prev_num, search=search) }}">Anterior</a></li>{% for page_number in pagination.iter_pages() %}{% if page_number %}<li class="page-item {% if page_number == pagination.page %}active{% endif %}"><a class="page-link" href="{{ url_for('categories.index', page=page_number, search=search) }}">{{ page_number }}</a></li>{% else %}<li class="page-item disabled"><span class="page-link">…</span></li>{% endif %}{% endfor %}<li class="page-item {% if not pagination.has_next %}disabled{% endif %}"><a class="page-link" href="{{ url_for('categories.index', page=pagination.next_num, search=search) }}">Siguiente</a></li></ul></nav>
+        {% endif %}
+        {% else %}
+        <div class="empty-content-state"><i class="bi bi-tags"></i><h2 class="h5 fw-bold">{% if search %}No se encontraron categorías para la búsqueda indicada.{% else %}No hay categorías registradas.{% endif %}</h2><p class="text-muted">{% if not search %}Crea la primera categoría para comenzar a organizar los artículos.{% endif %}</p><a class="btn btn-primary" href="{{ url_for('categories.new') }}"><i class="bi bi-plus-lg me-1"></i>Nueva categoría</a></div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

@@ -27,6 +27,7 @@ from routes.api_integrations import api_integrations
 from routes.auth import auth_bp
 from routes.health import health_bp
 from routes.public import public_bp
+from routes.categories import categories_bp
 
 
 def create_app(config_object=None):
@@ -59,6 +60,7 @@ def create_app(config_object=None):
     app.register_blueprint(api_articles)
     app.register_blueprint(api_integrations)
     app.register_blueprint(articles_bp)
+    app.register_blueprint(categories_bp)
     app.register_blueprint(auth_bp)
     app.register_blueprint(health_bp)
 
