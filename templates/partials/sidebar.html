@@ -12,7 +12,17 @@
         <a class="nav-link {% if request.blueprint == 'articles' %}active{% endif %}" href="{{ url_for('articles.index') }}"><i class="bi bi-file-earmark-text"></i><span>Artículos</span></a>
         {% endif %}
         <p class="sidebar-section">Administración</p>
-        {% if has_permission(Permissions.CATEGORIES_VIEW) %}<span class="nav-link opacity-50" title="Módulo próximamente disponible"><i class="bi bi-tags"></i><span>Categorías</span></span>{% endif %}
+        {% if has_permission(Permissions.CATEGORIES_VIEW) %}
+            <a
+                class="nav-link {% if request.blueprint == 'categories' %}active{% endif %}"
+                href="{{ url_for('categories.index') }}"
+            >
+                <i class="bi bi-tags"></i>
+                <span>Categorías</span>
+            </a>
+            {% endif %}
+                    
+        
         {% if has_permission(Permissions.SOURCES_VIEW) %}<span class="nav-link opacity-50" title="Módulo próximamente disponible"><i class="bi bi-globe2"></i><span>Fuentes</span></span>{% endif %}
         {% if has_permission(Permissions.USERS_VIEW) %}<span class="nav-link opacity-50" title="Módulo próximamente disponible"><i class="bi bi-people"></i><span>Usuarios</span></span>{% endif %}
         {% if has_permission(Permissions.ROLES_VIEW) %}<span class="nav-link opacity-50" title="Módulo próximamente disponible"><i class="bi bi-shield-lock"></i><span>Roles</span></span>{% endif %}
