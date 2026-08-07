@@ -29,7 +29,7 @@
                     {% for article in articles %}
                     <tr>
                         <td><a class="article-title" href="{{ url_for('articles.edit', article_id=article.id) }}">{{ article.title }}</a><p class="text-muted small mb-0">{{ article.slug or 'Sin slug' }}</p></td>
-                        <td>{{ article.author or 'Sin autor' }}</td>
+                        <td>{{ article.author or 'Sin autor' }}<div class="mt-1">{% if article.category %}<span class="badge border" style="color:{{ article.category.color }}"><i class="bi {{ article.category.icon }}"></i> {{ article.category.name }}</span>{% else %}<span class="text-muted small">Sin categoría</span>{% endif %}</div></td>
                         <td><span class="status-badge status-badge--{{ article.status }}">{{ 'Publicado' if article.status == 'published' else 'Borrador' if article.status == 'draft' else article.status }}</span></td>
                         <td class="text-muted small">{{ article.updated_at.strftime('%d/%m/%Y') if article.updated_at else '—' }}</td>
                         <td><div class="d-flex justify-content-end gap-2"><a class="btn btn-sm btn-light border" href="{{ url_for('articles.edit', article_id=article.id) }}" aria-label="Editar {{ article.title }}"><i class="bi bi-pencil"></i></a><form method="post" action="{{ url_for('articles.delete', article_id=article.id) }}" onsubmit="return confirm('¿Seguro que deseas eliminar este artículo?');"><button class="btn btn-sm btn-light border text-danger" type="submit" aria-label="Eliminar {{ article.title }}"><i class="bi bi-trash"></i></button></form></div></td>

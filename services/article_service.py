@@ -9,6 +9,7 @@ from slugify import slugify
 
 from models import Article
 from repositories.article_repository import ArticleRepository
+from services.category_service import CategoryService
 from services.automatic_analysis_service import AutomaticAnalysisResult, AutomaticAnalysisService
 
 
@@ -113,9 +114,9 @@ class ArticleService:
         article = ArticleRepository.get_by_id(article_id)
         if article is None:
             return ArticleUpdateResult(None, set())
-        data = ArticleService.normalize_and_validate(data)
+        data = ArticleService.normalize_and_validate(data, article.category_id)
         changed_fields: set[str] = set()
-        for field_name in ("title", "author", "summary", "content", "status"):
+        for field_name in ("title", "author", "summary", "content", "status", "category_id"):
             current_value = getattr(article, field_name)
             new_value = data.get(field_name, current_value)
             if not ArticleService._values_equivalent(current_value, new_value):
@@ -145,11 +146,25 @@ class ArticleService:
         return ArticleRepository.paginate((search_term or "").strip(), page, 10)
 
     @staticmethod
-    def normalize_and_validate(data: dict[str, Any]) -> dict[str, Any]:
+    def normalize_and_validate(data: dict[str, Any], current_category_id: int | None = None) -> dict[str, Any]:
         """Normalize form input and enforce article business invariants."""
         normalized = {field: (value.strip() if isinstance(value, str) else value) for field, value in data.items()}
         errors = {}
         title, content, status = normalized.get("title", ""), normalized.get("content", ""), normalized.get("status", "draft")
+        raw_category_id = normalized.get("category_id")
+        if raw_category_id in (None, "", "0"):
+            normalized["category_id"] = None
+        else:
+            try:
+                category_id = int(raw_category_id)
+                category = CategoryService.get_category(category_id)
+                if category is None:
+                    errors["category_id"] = "La categoría seleccionada no existe."
+                elif not category.is_active and category_id != current_category_id:
+                    errors["category_id"] = "La categoría seleccionada no está activa."
+                normalized["category_id"] = category_id
+            except (TypeError, ValueError):
+                errors["category_id"] = "La categoría seleccionada no es válida."
         if not isinstance(title, str) or not 3 <= len(title) <= 250: errors["title"] = "El título debe tener entre 3 y 250 caracteres."
         if not isinstance(content, str) or not content: errors["content"] = "El contenido es obligatorio."
         if status not in {"draft", "published", "archived"}: errors["status"] = "El estado seleccionado no es válido."

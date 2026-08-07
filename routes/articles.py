@@ -8,6 +8,7 @@ from core.audit import log_audit_event
 from core.decorators import permission_required
 from core.permissions import Permissions
 from services.article_service import ArticleService, ArticleValidationError
+from services.category_service import CategoryService
 
 
 articles_bp = Blueprint("articles", __name__, url_prefix="/articles")
@@ -27,7 +28,7 @@ def index():
 @login_required
 @permission_required(Permissions.ARTICLES_CREATE)
 def new():
-    return render_template("articles/form.html")
+    return render_template("articles/form.html", categories=CategoryService.get_active_categories())
 
 
 @articles_bp.post("/")
@@ -38,7 +39,7 @@ def create():
     try: result = ArticleService.create_article_with_analysis(data)
     except ArticleValidationError as error:
         for message in error.errors.values(): flash(message, "danger")
-        return render_template("articles/form.html", article=data), 400
+        return render_template("articles/form.html", article=data, categories=CategoryService.get_active_categories()), 400
     log_audit_event("article.created", user_id=current_user.id, article_id=result.article.id)
     if result.ai_analysis.status == AIProcessingStatus.COMPLETED:
         flash("Artículo creado y analizado correctamente.", "success")
@@ -57,7 +58,10 @@ def edit(article_id):
     if article is None:
         flash("Artículo no encontrado.", "danger")
         return redirect(url_for("articles.index"))
-    return render_template("articles/form.html", article=article)
+    categories = CategoryService.get_active_categories()
+    if article.category and not article.category.is_active and article.category not in categories:
+        categories.append(article.category)
+    return render_template("articles/form.html", article=article, categories=categories)
 
 
 @articles_bp.post("/<int:article_id>/edit")
@@ -69,7 +73,7 @@ def update(article_id):
     except ArticleValidationError as error:
         for message in error.errors.values(): flash(message, "danger")
         data["id"] = article_id
-        return render_template("articles/form.html", article=data), 400
+        return render_template("articles/form.html", article=data, categories=CategoryService.get_active_categories()), 400
     if result is None:
         flash("No se encontró el artículo.", "danger")
         return redirect(url_for("articles.index"))
@@ -99,4 +103,4 @@ def delete(article_id):
 
 def _article_form_data() -> dict[str, str | None]:
     """Build the existing web form payload without exposing request logic to services."""
-    return {"title": request.form["title"], "author": request.form.get("author"), "summary": request.form.get("summary"), "content": request.form.get("content"), "status": request.form.get("status", "draft")}
+    return {"title": request.form["title"], "author": request.form.get("author"), "summary": request.form.get("summary"), "content": request.form.get("content"), "status": request.form.get("status", "draft"), "category_id": request.form.get("category_id")}

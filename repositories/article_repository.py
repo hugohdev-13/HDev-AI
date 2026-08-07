@@ -1,4 +1,5 @@
 from sqlalchemy import or_
+from sqlalchemy.orm import selectinload
 
 from models import Article
 from extensions import db
@@ -50,7 +51,7 @@ class ArticleRepository:
         if search_term:
             pattern = f"%{search_term}%"
             query = query.filter(or_(Article.title.ilike(pattern), Article.author.ilike(pattern), Article.summary.ilike(pattern), Article.content.ilike(pattern)))
-        return query.order_by(Article.created_at.desc(), Article.id.desc())
+        return query.options(selectinload(Article.category)).order_by(Article.created_at.desc(), Article.id.desc())
 
     @staticmethod
     def paginate(search_term: str, page: int, per_page: int = 10):
