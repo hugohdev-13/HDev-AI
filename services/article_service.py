@@ -138,12 +138,46 @@ class ArticleService:
         return ArticleMutationResult(update_result.article, coordinator.analyze_after_update(update_result.article, update_result.changed_fields), update_result.changed_fields)
 
     @staticmethod
-    def search_articles(search_term=None):
-        return ArticleRepository.search((search_term or "").strip())
+    def search_articles(search_term=None, category_id=None, status=None):
+        """Return articles matching normalized, non-mutating list filters."""
+        filters = ArticleService.normalize_list_filters(search_term, category_id, status)
+        return ArticleRepository.search(**filters)
 
     @staticmethod
-    def get_paginated_articles(search_term: str, page: int):
-        return ArticleRepository.paginate((search_term or "").strip(), page, 10)
+    def get_paginated_articles(
+        search_term=None,
+        page: int = 1,
+        category_id=None,
+        status=None,
+        per_page: int = 10,
+    ):
+        """Return a safe paginated article listing for the supplied filters."""
+        filters = ArticleService.normalize_list_filters(search_term, category_id, status)
+        return ArticleRepository.paginate(
+            **filters, page=max(page or 1, 1), per_page=per_page
+        )
+
+    @staticmethod
+    def normalize_list_filters(search_term=None, category_id=None, status=None):
+        """Normalize read-only filters and ignore invalid query-string values."""
+        normalized_category_id = None
+        if category_id not in (None, ""):
+            try:
+                parsed_category_id = int(category_id)
+                if parsed_category_id > 0:
+                    normalized_category_id = parsed_category_id
+            except (TypeError, ValueError):
+                pass
+
+        normalized_status = (status or "").strip()
+        if normalized_status not in {"draft", "published", "archived"}:
+            normalized_status = None
+
+        return {
+            "search_term": (search_term or "").strip(),
+            "category_id": normalized_category_id,
+            "status": normalized_status,
+        }
 
     @staticmethod
     def normalize_and_validate(data: dict[str, Any], current_category_id: int | None = None) -> dict[str, Any]:
@@ -157,6 +191,8 @@ class ArticleService:
         else:
             try:
                 category_id = int(raw_category_id)
+                if category_id <= 0:
+                    raise ValueError("category_id must be positive")
                 category = CategoryService.get_category(category_id)
                 if category is None:
                     errors["category_id"] = "La categoría seleccionada no existe."

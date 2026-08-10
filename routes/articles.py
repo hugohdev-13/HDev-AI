@@ -19,9 +19,20 @@ articles_bp = Blueprint("articles", __name__, url_prefix="/articles")
 @permission_required(Permissions.ARTICLES_VIEW)
 def index():
     search = request.args.get("search", "").strip()
+    category_id = request.args.get("category", "")
+    status = request.args.get("status", "").strip()
     page = request.args.get("page", 1, type=int)
-    pagination = ArticleService.get_paginated_articles(search, page)
-    return render_template("articles/index.html", articles=pagination.items, pagination=pagination, search=search)
+    filters = ArticleService.normalize_list_filters(search, category_id, status)
+    pagination = ArticleService.get_paginated_articles(page=page, **filters)
+    return render_template(
+        "articles/index.html",
+        articles=pagination.items,
+        pagination=pagination,
+        search=filters["search_term"],
+        categories=CategoryService.get_active_categories(),
+        selected_category_id=filters["category_id"],
+        selected_status=filters["status"],
+    )
 
 
 @articles_bp.get("/new")

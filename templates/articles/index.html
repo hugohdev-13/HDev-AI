@@ -9,44 +9,144 @@
         <h1 class="page-title">Artículos</h1>
         <p class="text-muted mb-0">Administra y publica el contenido de tu organización.</p>
     </div>
-    <a href="{{ url_for('articles.new') }}" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i>Nuevo artículo</a>
+    <a href="{{ url_for('articles.new') }}" class="btn btn-primary">
+        <i class="bi bi-plus-lg me-1"></i>Nuevo artículo
+    </a>
 </div>
 
 <section class="content-card">
     <header class="content-card__header content-card__header--stack-sm">
-        <div><h2 class="h6 mb-1 fw-bold">Biblioteca de artículos</h2><p class="text-muted small mb-0">{{ pagination.total }} artículo{{ '' if pagination.total == 1 else 's' }} en total</p></div>
-        <form class="article-search" method="get" role="search">
-            <label class="visually-hidden" for="search">Buscar por título</label>
-            <div class="input-group"><span class="input-group-text"><i class="bi bi-search"></i></span><input class="form-control" id="search" name="search" type="search" value="{{ search }}" placeholder="Buscar por título"><button class="btn btn-light border" type="submit">Buscar</button></div>
+        <div>
+            <h2 class="h6 mb-1 fw-bold">Biblioteca de artículos</h2>
+            <p class="text-muted small mb-0">
+                {{ pagination.total }} {{ 'resultado' if pagination.total == 1 else 'resultados' }}
+            </p>
+        </div>
+        <form class="row g-2 align-items-end w-100" method="get" role="search">
+            <div class="col-12 col-md-5 col-xl">
+                <label class="form-label small fw-semibold" for="search">Buscar</label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-search"></i></span>
+                    <input class="form-control" id="search" name="search" type="search"
+                           value="{{ search }}" placeholder="Título, autor o contenido">
+                </div>
+            </div>
+            <div class="col-12 col-md-3 col-xl-3">
+                <label class="form-label small fw-semibold" for="category">Categoría</label>
+                <select class="form-select" id="category" name="category">
+                    <option value="">Todas las categorías</option>
+                    {% for category in categories %}
+                    <option value="{{ category.id }}" {% if category.id == selected_category_id %}selected{% endif %}>
+                        {{ category.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-12 col-md-2 col-xl-2">
+                <label class="form-label small fw-semibold" for="status">Estado</label>
+                <select class="form-select" id="status" name="status">
+                    <option value="">Todos</option>
+                    <option value="draft" {% if selected_status == 'draft' %}selected{% endif %}>Borrador</option>
+                    <option value="published" {% if selected_status == 'published' %}selected{% endif %}>Publicado</option>
+                    <option value="archived" {% if selected_status == 'archived' %}selected{% endif %}>Archivado</option>
+                </select>
+            </div>
+            <div class="col-12 col-md-auto d-grid">
+                <button class="btn btn-primary" type="submit"><i class="bi bi-funnel me-1"></i>Filtrar</button>
+            </div>
+            {% if search or selected_category_id or selected_status %}
+            <div class="col-12 col-md-auto d-grid">
+                <a class="btn btn-light border" href="{{ url_for('articles.index') }}">Limpiar filtros</a>
+            </div>
+            {% endif %}
         </form>
     </header>
+
     <div class="content-card__body p-0">
         {% if articles %}
         <div class="table-responsive">
             <table class="table table-hover align-middle">
-                <thead><tr><th scope="col">Título</th><th scope="col">Autor</th><th scope="col">Estado</th><th scope="col">Actualizado</th><th scope="col" class="text-end">Acciones</th></tr></thead>
+                <thead>
+                    <tr>
+                        <th scope="col">Título</th>
+                        <th scope="col">Autor</th>
+                        <th scope="col">Estado</th>
+                        <th scope="col">Actualizado</th>
+                        <th scope="col" class="text-end">Acciones</th>
+                    </tr>
+                </thead>
                 <tbody>
                     {% for article in articles %}
                     <tr>
-                        <td><a class="article-title" href="{{ url_for('articles.edit', article_id=article.id) }}">{{ article.title }}</a><p class="text-muted small mb-0">{{ article.slug or 'Sin slug' }}</p></td>
-                        <td>{{ article.author or 'Sin autor' }}<div class="mt-1">{% if article.category %}<span class="badge border" style="color:{{ article.category.color }}"><i class="bi {{ article.category.icon }}"></i> {{ article.category.name }}</span>{% else %}<span class="text-muted small">Sin categoría</span>{% endif %}</div></td>
-                        <td><span class="status-badge status-badge--{{ article.status }}">{{ 'Publicado' if article.status == 'published' else 'Borrador' if article.status == 'draft' else article.status }}</span></td>
+                        <td>
+                            <a class="article-title" href="{{ url_for('articles.edit', article_id=article.id) }}">{{ article.title }}</a>
+                            <p class="text-muted small mb-0">{{ article.slug or 'Sin slug' }}</p>
+                        </td>
+                        <td>
+                            {{ article.author or 'Sin autor' }}
+                            <div class="mt-1">
+                                {% if article.category %}
+                                <span class="badge border" style="color:{{ article.category.color }}">
+                                    <i class="bi {{ article.category.icon }}"></i> {{ article.category.name }}
+                                </span>
+                                {% else %}
+                                <span class="text-muted small">Sin categoría</span>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td>
+                            <span class="status-badge status-badge--{{ article.status }}">
+                                {{ 'Publicado' if article.status == 'published' else 'Borrador' if article.status == 'draft' else 'Archivado' }}
+                            </span>
+                        </td>
                         <td class="text-muted small">{{ article.updated_at.strftime('%d/%m/%Y') if article.updated_at else '—' }}</td>
-                        <td><div class="d-flex justify-content-end gap-2"><a class="btn btn-sm btn-light border" href="{{ url_for('articles.edit', article_id=article.id) }}" aria-label="Editar {{ article.title }}"><i class="bi bi-pencil"></i></a><form method="post" action="{{ url_for('articles.delete', article_id=article.id) }}" onsubmit="return confirm('¿Seguro que deseas eliminar este artículo?');"><button class="btn btn-sm btn-light border text-danger" type="submit" aria-label="Eliminar {{ article.title }}"><i class="bi bi-trash"></i></button></form></div></td>
+                        <td>
+                            <div class="d-flex justify-content-end gap-2">
+                                <a class="btn btn-sm btn-light border" href="{{ url_for('articles.edit', article_id=article.id) }}" aria-label="Editar {{ article.title }}"><i class="bi bi-pencil"></i></a>
+                                <form method="post" action="{{ url_for('articles.delete', article_id=article.id) }}" onsubmit="return confirm('¿Seguro que deseas eliminar este artículo?');">
+                                    <button class="btn btn-sm btn-light border text-danger" type="submit" aria-label="Eliminar {{ article.title }}"><i class="bi bi-trash"></i></button>
+                                </form>
+                            </div>
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
         {% if pagination.pages > 1 %}
-        <nav class="p-3" aria-label="Paginación de artículos"><ul class="pagination justify-content-center mb-0">
-            <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}"><a class="page-link" href="{{ url_for('articles.index', page=pagination.prev_num, search=search) }}">Anterior</a></li>
-            {% for page_number in pagination.iter_pages() %}{% if page_number %}<li class="page-item {% if page_number == pagination.page %}active{% endif %}"><a class="page-link" href="{{ url_for('articles.index', page=page_number, search=search) }}">{{ page_number }}</a></li>{% else %}<li class="page-item disabled"><span class="page-link">…</span></li>{% endif %}{% endfor %}
-            <li class="page-item {% if not pagination.has_next %}disabled{% endif %}"><a class="page-link" href="{{ url_for('articles.index', page=pagination.next_num, search=search) }}">Siguiente</a></li>
-        </ul></nav>
+        <nav class="p-3" aria-label="Paginación de artículos">
+            <ul class="pagination justify-content-center mb-0">
+                <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('articles.index', page=pagination.prev_num, search=search, category=selected_category_id, status=selected_status) }}">Anterior</a>
+                </li>
+                {% for page_number in pagination.iter_pages() %}
+                    {% if page_number %}
+                    <li class="page-item {% if page_number == pagination.page %}active{% endif %}">
+                        <a class="page-link" href="{{ url_for('articles.index', page=page_number, search=search, category=selected_category_id, status=selected_status) }}">{{ page_number }}</a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled"><span class="page-link">…</span></li>
+                    {% endif %}
+                {% endfor %}
+                <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('articles.index', page=pagination.next_num, search=search, category=selected_category_id, status=selected_status) }}">Siguiente</a>
+                </li>
+            </ul>
+        </nav>
         {% endif %}
         {% else %}
-        <div class="empty-content-state"><i class="bi bi-file-earmark-text"></i><h2 class="h5 fw-bold">No hay artículos para mostrar</h2><p class="text-muted">{% if search %}No encontramos resultados para “{{ search }}”.{% else %}Crea tu primer artículo para comenzar a gestionar contenido.{% endif %}</p>{% if search %}<a class="btn btn-light border" href="{{ url_for('articles.index') }}">Limpiar búsqueda</a>{% else %}<a class="btn btn-primary" href="{{ url_for('articles.new') }}"><i class="bi bi-plus-lg me-1"></i>Crear artículo</a>{% endif %}</div>
+        <div class="empty-content-state">
+            <i class="bi bi-file-earmark-text"></i>
+            {% if search or selected_category_id or selected_status %}
+            <h2 class="h5 fw-bold">No se encontraron artículos con los filtros seleccionados.</h2>
+            <p class="text-muted">Ajusta los criterios o vuelve a ver el listado completo.</p>
+            <a class="btn btn-light border" href="{{ url_for('articles.index') }}">Limpiar filtros</a>
+            {% else %}
+            <h2 class="h5 fw-bold">No hay artículos registrados.</h2>
+            <p class="text-muted">Crea tu primer artículo para comenzar a gestionar contenido.</p>
+            <a class="btn btn-primary" href="{{ url_for('articles.new') }}"><i class="bi bi-plus-lg me-1"></i>Crear artículo</a>
+            {% endif %}
+        </div>
         {% endif %}
     </div>
 </section>
