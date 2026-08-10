@@ -23,7 +23,7 @@
             {% endif %}
                     
         
-        {% if has_permission(Permissions.SOURCES_VIEW) %}<span class="nav-link opacity-50" title="Módulo próximamente disponible"><i class="bi bi-globe2"></i><span>Fuentes</span></span>{% endif %}
+        {% if has_permission(Permissions.SOURCES_VIEW) %}<a class="nav-link {% if request.blueprint == 'sources' %}active{% endif %}" href="{{ url_for('sources.index') }}"><i class="bi bi-globe2"></i><span>Fuentes</span></a>{% endif %}
         {% if has_permission(Permissions.USERS_VIEW) %}<span class="nav-link opacity-50" title="Módulo próximamente disponible"><i class="bi bi-people"></i><span>Usuarios</span></span>{% endif %}
         {% if has_permission(Permissions.ROLES_VIEW) %}<span class="nav-link opacity-50" title="Módulo próximamente disponible"><i class="bi bi-shield-lock"></i><span>Roles</span></span>{% endif %}
         {% if has_permission(Permissions.SETTINGS_VIEW) %}<span class="nav-link opacity-50" title="Módulo próximamente disponible"><i class="bi bi-gear"></i><span>Configuración</span></span>{% endif %}

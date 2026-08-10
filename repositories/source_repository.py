@@ -112,3 +112,15 @@ class SourceRepository:
             Article.source_id == source_id
         )
         return int(db.session.scalar(statement) or 0)
+
+    @staticmethod
+    def article_counts(source_ids: list[int]) -> dict[int, int]:
+        """Return article counts for multiple sources in one aggregate query."""
+        if not source_ids:
+            return {}
+        statement = (
+            select(Article.source_id, func.count(Article.id))
+            .where(Article.source_id.in_(source_ids))
+            .group_by(Article.source_id)
+        )
+        return {source_id: int(count) for source_id, count in db.session.execute(statement)}

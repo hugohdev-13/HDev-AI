@@ -148,6 +148,9 @@
                     Categorías
                 </a>
                 {% endif %}
+                {% if has_permission(Permissions.SOURCES_VIEW) %}
+                <a class="nav-link {% if request.blueprint == 'sources' %}active{% endif %}" href="{{ url_for('sources.index') }}"><i class="bi bi-globe2 me-2"></i>Fuentes</a>
+                {% endif %}
             </nav>
 
             <a

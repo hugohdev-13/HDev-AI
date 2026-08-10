@@ -27,7 +27,11 @@ class SourceService:
 
     @staticmethod
     def list_sources(search_term: str, page: int, per_page: int):
-        return SourceRepository.paginate(search_term, page, per_page)
+        pagination = SourceRepository.paginate(search_term, page, per_page)
+        counts = SourceRepository.article_counts([source.id for source in pagination.items])
+        for source in pagination.items:
+            source.article_count = counts.get(source.id, 0)
+        return pagination
 
     @staticmethod
     def get_source(source_id: int) -> Source | None:

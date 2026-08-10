@@ -1,0 +1,1 @@
+document.addEventListener("DOMContentLoaded",()=>{const s=document.getElementById("source_type"),h=document.getElementById("source-type-help");if(!s||!h)return;const m={rss:"El feed RSS es obligatorio.",api:"Indica el endpoint o sitio web de la API.",manual:"El feed es opcional."};const u=()=>h.textContent=m[s.value]||"";s.addEventListener("change",u);u();});
