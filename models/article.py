@@ -85,6 +85,7 @@ class Article(db.Model):
         cascade="all, delete-orphan"
     )
     category = db.relationship("Category", back_populates="articles")
+    source = db.relationship("Source", back_populates="articles")
 
     def __repr__(self):
         return f"<Article {self.title}>"
