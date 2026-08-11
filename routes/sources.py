@@ -5,6 +5,8 @@ from core.audit import log_audit_event
 from core.decorators import permission_required
 from core.permissions import Permissions
 from services.source_service import SourceDeletionError, SourceService, SourceValidationError
+from services.rss_feed_service import RSSFeedService
+from services.rss_import_service import RSSImportService
 
 sources_bp = Blueprint("sources", __name__, url_prefix="/sources")
 
@@ -70,4 +72,23 @@ def delete(source_id):
     except SourceDeletionError as error: flash(str(error),"danger"); return redirect(url_for("sources.index"))
     if deleted: log_audit_event("source.deleted",user_id=current_user.id,source_id=source_id);flash("Fuente eliminada correctamente.","success")
     else: flash("Fuente no encontrada.","danger")
+    return redirect(url_for("sources.index"))
+
+@sources_bp.post("/<int:source_id>/preview")
+@login_required
+@permission_required(Permissions.SOURCES_EDIT)
+def preview(source_id):
+    source=SourceService.get_source(source_id); log_audit_event("source.rss_preview_started",user_id=current_user.id,source_id=source_id)
+    result=RSSFeedService.get_entries(source)
+    log_audit_event("source.rss_preview_completed" if result.success else "source.rss_preview_failed",user_id=current_user.id,source_id=source_id,entry_count=len(result.entries),status=result.success)
+    return render_template("sources/preview.html",source=source,result=result), (200 if result.success else 400)
+
+@sources_bp.post("/<int:source_id>/import")
+@login_required
+@permission_required(Permissions.SOURCES_EDIT)
+def import_feed(source_id):
+    log_audit_event("source.rss_import_started",user_id=current_user.id,source_id=source_id)
+    result=RSSImportService.import_source(source_id)
+    log_audit_event("source.rss_import_completed" if result.success else "source.rss_import_failed",user_id=current_user.id,source_id=source_id,imported_count=result.imported_count,duplicate_count=result.duplicate_count,failed_count=result.failed_count)
+    flash(result.message,"success" if result.success else "danger")
     return redirect(url_for("sources.index"))
