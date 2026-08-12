@@ -5,6 +5,7 @@ from services.article_service import ArticleService
 from services.category_service import CategoryService
 from services.rss_feed_service import RSSFeedService
 from services.source_service import SourceService
+from repositories.source_repository import SourceRepository
 
 @dataclass
 class RSSImportResult:
@@ -54,5 +55,14 @@ class RSSImportService:
             except Exception as error:
                 result.failed_count += 1
                 result.errors.append(str(error))
-        result.message = f"Importados {result.imported_count}, duplicados {result.duplicate_count}, analizados {result.analyzed_count}, categorizados {result.categorized_count}, sin categoría {result.uncategorized_count}, errores IA {result.analysis_failed_count}, errores {result.failed_count}."
+        source.last_sync_status = "partial" if result.failed_count else "success"
+        source.last_sync_message = (
+            f"Importados {result.imported_count}, duplicados "
+            f"{result.duplicate_count}, errores {result.failed_count}."
+        )
+        SourceRepository.save(source)
+        result.message = (
+            f"Sincronización completada: {result.imported_count} importados, "
+            f"{result.duplicate_count} duplicados, {result.failed_count} errores."
+        )
         return result
