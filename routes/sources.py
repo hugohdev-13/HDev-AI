@@ -41,7 +41,15 @@ def create():
 def edit(source_id):
     source=SourceService.get_source(source_id)
     if not source: flash("Fuente no encontrada.","danger"); return redirect(url_for("sources.index"))
-    return render_template("sources/form.html",source=source,form_data=source,errors={},mode="edit")
+    form_data = {
+        "name": source.name,
+        "website_url": source.website_url or "",
+        "feed_url": source.feed_url or "",
+        "source_type": source.source_type,
+        "sync_interval_minutes": source.sync_interval_minutes,
+        "is_active": source.is_active,
+    }
+    return render_template("sources/form.html",source=source,form_data=form_data,errors={},mode="edit")
 
 @sources_bp.post("/<int:source_id>/edit")
 @login_required
