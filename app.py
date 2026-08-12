@@ -1,5 +1,6 @@
 import logging
 
+import click
 from flask import Flask, render_template, request
 from werkzeug.middleware.proxy_fix import ProxyFix
 
@@ -29,6 +30,7 @@ from routes.health import health_bp
 from routes.public import public_bp
 from routes.categories import categories_bp
 from routes.sources import sources_bp
+from services.rss_scheduled_sync_service import RSSScheduledSyncService
 
 
 def create_app(config_object=None):
@@ -65,6 +67,23 @@ def create_app(config_object=None):
     app.register_blueprint(sources_bp)
     app.register_blueprint(auth_bp)
     app.register_blueprint(health_bp)
+
+    @app.cli.command("sync-rss")
+    def sync_rss_command():
+        """Run one external-scheduler-compatible RSS synchronization pass."""
+        result = RSSScheduledSyncService.sync_all()
+        click.echo(
+            "RSS sync: "
+            f"sources={result.total_sources}, "
+            f"success={result.successful_sources}, "
+            f"partial={result.partial_sources}, "
+            f"failed={result.failed_sources}, "
+            f"imported={result.imported_count}, "
+            f"duplicates={result.duplicate_count}, "
+            f"errors={result.failed_count}"
+        )
+        if result.failed_sources:
+            raise click.ClickException("Una o más fuentes RSS fallaron.")
 
     @app.errorhandler(404)
     def not_found(error):
