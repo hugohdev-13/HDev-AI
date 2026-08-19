@@ -30,3 +30,24 @@ class RSSSyncHistoryRepository:
     def list_by_source(source_id, limit=50):
         statement = select(RSSSyncHistory).where(RSSSyncHistory.source_id == source_id).order_by(RSSSyncHistory.created_at.desc()).limit(limit)
         return list(db.session.scalars(statement))
+
+    @staticmethod
+    def list_by_source_ids(source_ids: list[int]):
+        """Return history ordered newest-first for a group of sources.
+
+        The health service groups these rows in memory, avoiding one query per
+        source while keeping the calculation derived from persisted history.
+        """
+        if not source_ids:
+            return []
+
+        statement = (
+            select(RSSSyncHistory)
+            .where(RSSSyncHistory.source_id.in_(source_ids))
+            .order_by(
+                RSSSyncHistory.source_id,
+                RSSSyncHistory.created_at.desc(),
+                RSSSyncHistory.id.desc(),
+            )
+        )
+        return list(db.session.scalars(statement))

@@ -8,6 +8,7 @@ from services.source_service import SourceDeletionError, SourceService, SourceVa
 from services.rss_feed_service import RSSFeedService
 from services.rss_import_service import RSSImportService
 from services.rss_sync_history_service import RSSSyncHistoryService
+from services.rss_source_health_service import RSSSourceHealthService
 
 sources_bp = Blueprint("sources", __name__, url_prefix="/sources")
 
@@ -19,6 +20,11 @@ def _data():
 @permission_required(Permissions.SOURCES_VIEW)
 def index():
     search=request.args.get("search", "").strip(); pagination=SourceService.list_sources(search, request.args.get("page", 1, type=int), 10)
+    health_by_source = RSSSourceHealthService.get_health_for_sources(
+        pagination.items
+    )
+    for source in pagination.items:
+        source.rss_health = health_by_source.get(source.id)
     return render_template("sources/index.html", sources=pagination.items, pagination=pagination, search=search, total=pagination.total)
 
 @sources_bp.get("/new")

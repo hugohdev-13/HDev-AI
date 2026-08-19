@@ -1,6 +1,8 @@
 """Presentation-neutral dashboard aggregation service."""
 
 from repositories.dashboard_repository import DashboardRepository
+from services.rss_source_health_service import RSSSourceHealthService
+from services.source_service import SourceService
 
 
 class DashboardService:
@@ -9,6 +11,9 @@ class DashboardService:
     @staticmethod
     def get_dashboard_data() -> dict:
         repository = DashboardRepository
+        source_health = RSSSourceHealthService.get_health_summary(
+            SourceService.get_active_rss_sources()
+        )
         return {
             "total_articles": repository.total_articles() or 0,
             "published_articles": repository.published_articles() or 0,
@@ -20,6 +25,7 @@ class DashboardService:
             "recent_articles": repository.recent_articles(5) or [],
             "article_status_distribution": repository.article_status_distribution() or [],
             "top_technologies": repository.top_technologies(8) or [],
+            "rss_health": source_health,
         }
 
     @staticmethod

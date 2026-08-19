@@ -42,6 +42,11 @@ class SourceService:
         return SourceRepository.list_active()
 
     @staticmethod
+    def get_active_rss_sources() -> list[Source]:
+        """Return active RSS sources without exposing repository details."""
+        return SourceRepository.list_active_rss()
+
+    @staticmethod
     def create_source(data: dict) -> Source:
         data = SourceService.validate_source_data(data)
         source = Source(

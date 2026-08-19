@@ -33,6 +33,19 @@ class SourceRepository:
         return list(db.session.scalars(statement))
 
     @staticmethod
+    def list_active_rss() -> list[Source]:
+        """Return only enabled RSS sources eligible for health monitoring."""
+        statement = (
+            select(Source)
+            .where(
+                Source.is_active == true(),
+                Source.source_type == "rss",
+            )
+            .order_by(Source.name)
+        )
+        return list(db.session.scalars(statement))
+
+    @staticmethod
     def search(search_term: str = ""):
         term = (search_term or "").strip()
         statement = select(Source)
