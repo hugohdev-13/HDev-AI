@@ -120,3 +120,31 @@ def test_health_summary_counts_attention_sources():
     assert summary["healthy_sources"] == 1
     assert summary["warning_sources"] == 1
     assert [item["source"].id for item in summary["attention_sources"]] == [2]
+
+
+def test_health_summary_prioritizes_critical_alerts():
+    sources = [_source(1), _source(2)]
+    histories = [
+        _history(1, "failed", 5),
+        _history(2, "failed", 5),
+        _history(2, "failed", 10),
+        _history(2, "failed", 15),
+    ]
+    with patch(
+        "services.rss_source_health_service.RSSSyncHistoryRepository.list_by_source_ids",
+        return_value=histories,
+    ):
+        summary = RSSSourceHealthService.get_health_summary(sources, now=NOW)
+    assert summary["global_status"] == "attention_required"
+    assert summary["has_active_alerts"] is True
+    assert [item["source"].id for item in summary["attention_sources"]] == [2, 1]
+
+
+def test_safe_error_message_redacts_secrets_and_removes_tracebacks():
+    secret = _history(1, "failed", 5, "token=super-secret https://user:pass@example.com/feed")
+    traceback = _history(1, "failed", 5, "Traceback (most recent call last):")
+    long_message = _history(1, "failed", 5, "x" * 300)
+    assert "super-secret" not in RSSSourceHealthService._safe_message(secret)
+    assert ":pass@" not in RSSSourceHealthService._safe_message(secret)
+    assert "Traceback" not in RSSSourceHealthService._safe_message(traceback)
+    assert len(RSSSourceHealthService._safe_message(long_message)) == 160

@@ -46,6 +46,15 @@ Configure every required value in `.env`; never commit it. `SECRET_KEY`, SQL Ser
 
 The suite uses mocks for AI and does not require n8n or an external provider.
 
+## RSS Automation
+
+HDev AI sincroniza fuentes RSS manualmente desde **Fuentes** o de forma diaria
+mediante Azure WebJob y `flask sync-rss`. Cada ejecución conserva historial,
+deduplicación, análisis IA para artículos nuevos y monitoreo de salud con
+alertas internas en el dashboard. Consulta la
+[arquitectura RSS](docs/rss_architecture.md) para el flujo, comandos y guía de
+diagnóstico.
+
 ## Integration and endpoints
 
 The n8n endpoint is `POST /api/integrations/articles`; duplicates are matched by `external_id`, `source_url`, then slug. Documentation: [n8n guide](docs/integrations/n8n.md). The health endpoint is `GET /api/integrations/health`.

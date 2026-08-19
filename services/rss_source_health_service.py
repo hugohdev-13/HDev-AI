@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections import defaultdict
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
+import re
 from typing import Iterable
 
 from repositories.rss_sync_history_repository import RSSSyncHistoryRepository
@@ -74,20 +75,32 @@ class RSSSourceHealthService:
         source_list = list(sources)
         health_by_source = cls.get_health_for_sources(source_list, now=now)
         statuses = [item.health_status for item in health_by_source.values()]
-        return {
-            "total_active_rss_sources": len(source_list),
-            "healthy_sources": statuses.count(cls.HEALTHY),
-            "warning_sources": statuses.count(cls.WARNING),
-            "critical_sources": statuses.count(cls.CRITICAL),
-            "never_synced_sources": statuses.count(cls.NEVER_SYNCED),
-            "attention_sources": [
+        attention_sources = sorted(
+            (
                 {
                     "source": source,
                     "health": health_by_source[source.id],
                 }
                 for source in source_list
                 if health_by_source[source.id].needs_attention
-            ],
+            ),
+            key=lambda item: (
+                item["health"].health_status != cls.CRITICAL,
+                -item["health"].consecutive_failures,
+                item["source"].name.lower(),
+            ),
+        )
+        return {
+            "total_active_rss_sources": len(source_list),
+            "healthy_sources": statuses.count(cls.HEALTHY),
+            "warning_sources": statuses.count(cls.WARNING),
+            "critical_sources": statuses.count(cls.CRITICAL),
+            "never_synced_sources": statuses.count(cls.NEVER_SYNCED),
+            "attention_sources": attention_sources,
+            "has_active_alerts": bool(attention_sources),
+            "global_status": "attention_required"
+            if attention_sources
+            else "operational",
             "health_by_source": health_by_source,
         }
 
@@ -187,5 +200,18 @@ class RSSSourceHealthService:
     def _safe_message(history) -> str | None:
         if history is None or not getattr(history, "message", None):
             return None
-        # Display only one concise line: operational diagnostics, never traces.
-        return " ".join(str(history.message).splitlines()[0].split())[:200] or None
+        # Display one concise operational line, never a traceback or secret.
+        message = " ".join(str(history.message).splitlines()[0].split())
+        if "traceback" in message.lower() or "connection string" in message.lower():
+            return "Error de sincronización. Consulta el historial técnico."
+        message = re.sub(
+            r"://([^:/\s]+):[^@\s]+@",
+            r"://\1:***@",
+            message,
+        )
+        message = re.sub(
+            r"(?i)\b(password|pwd|secret|token|api[_-]?key)\s*=\s*[^\s;,&]+",
+            r"\1=***",
+            message,
+        )
+        return message[:160] or None
