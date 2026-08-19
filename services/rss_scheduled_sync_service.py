@@ -5,6 +5,7 @@ import logging
 
 from services.rss_import_service import RSSImportService
 from services.source_service import SourceService
+from services.rss_sync_history_service import RSSSyncHistoryService
 
 
 logger = logging.getLogger(__name__)
@@ -44,8 +45,10 @@ class RSSScheduledSyncService:
 
         for source in eligible_sources:
             logger.info("rss.sync.source.started source_id=%s", source.id)
+            history = RSSSyncHistoryService.start(source.id, "scheduled")
             try:
                 source_result = RSSImportService.import_source(source.id)
+                RSSSyncHistoryService.finish(history, source_result)
                 result.results[source.id] = {
                     "success": source_result.success,
                     "imported_count": source_result.imported_count,
@@ -69,6 +72,11 @@ class RSSScheduledSyncService:
                     source_result.success,
                 )
             except Exception as error:
+                class FailedResult:
+                    success = False
+                    imported_count = duplicate_count = failed_count = total_entries = 0
+                    message = "No fue posible sincronizar la fuente."
+                RSSSyncHistoryService.finish(history, FailedResult())
                 result.failed_sources += 1
                 result.failed_count += 1
                 result.results[source.id] = {

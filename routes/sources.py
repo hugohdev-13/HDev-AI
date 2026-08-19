@@ -7,6 +7,7 @@ from core.permissions import Permissions
 from services.source_service import SourceDeletionError, SourceService, SourceValidationError
 from services.rss_feed_service import RSSFeedService
 from services.rss_import_service import RSSImportService
+from services.rss_sync_history_service import RSSSyncHistoryService
 
 sources_bp = Blueprint("sources", __name__, url_prefix="/sources")
 
@@ -96,7 +97,15 @@ def preview(source_id):
 @permission_required(Permissions.SOURCES_EDIT)
 def import_feed(source_id):
     log_audit_event("source.rss_import_started",user_id=current_user.id,source_id=source_id)
+    history = RSSSyncHistoryService.start(source_id, "manual")
     result=RSSImportService.import_source(source_id)
+    RSSSyncHistoryService.finish(history, result)
     log_audit_event("source.rss_import_completed" if result.success else "source.rss_import_failed",user_id=current_user.id,source_id=source_id,imported_count=result.imported_count,duplicate_count=result.duplicate_count,failed_count=result.failed_count)
     flash(result.message,"success" if result.success else "danger")
     return redirect(url_for("sources.index"))
+
+@sources_bp.get("/sync-history")
+@login_required
+@permission_required(Permissions.SOURCES_VIEW)
+def sync_history():
+    return render_template("sources/sync_history.html", history=RSSSyncHistoryService.recent())

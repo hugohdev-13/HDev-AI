@@ -27,6 +27,9 @@ class Source(db.Model):
     )
 
     articles = db.relationship("Article", back_populates="source", lazy="selectin")
+    sync_history = db.relationship(
+        "RSSSyncHistory", back_populates="source", lazy="selectin"
+    )
 
     def __repr__(self) -> str:
         return f"<Source {self.name}>"

@@ -14,7 +14,9 @@ def test_no_eligible_sources_returns_empty_summary(_sources):
 
 @patch("services.rss_scheduled_sync_service.RSSImportService.import_source")
 @patch("services.rss_scheduled_sync_service.SourceService.get_active_sources")
-def test_syncs_only_active_rss_sources(sources, import_source):
+@patch("services.rss_scheduled_sync_service.RSSSyncHistoryService.finish")
+@patch("services.rss_scheduled_sync_service.RSSSyncHistoryService.start", return_value=object())
+def test_syncs_only_active_rss_sources(_start, _finish, sources, import_source):
     sources.return_value = [
         SimpleNamespace(id=1, source_type="rss"),
         SimpleNamespace(id=2, source_type="api"),
@@ -33,7 +35,9 @@ def test_syncs_only_active_rss_sources(sources, import_source):
 
 @patch("services.rss_scheduled_sync_service.RSSImportService.import_source")
 @patch("services.rss_scheduled_sync_service.SourceService.get_active_sources")
-def test_failure_isolated_and_next_source_continues(sources, import_source):
+@patch("services.rss_scheduled_sync_service.RSSSyncHistoryService.finish")
+@patch("services.rss_scheduled_sync_service.RSSSyncHistoryService.start", return_value=object())
+def test_failure_isolated_and_next_source_continues(_start, _finish, sources, import_source):
     sources.return_value = [
         SimpleNamespace(id=1, source_type="rss"),
         SimpleNamespace(id=2, source_type="rss"),
