@@ -142,4 +142,13 @@ def transition_status(article_id):
 
 def _article_form_data() -> dict[str, str | None]:
     """Build the existing web form payload without exposing request logic to services."""
-    return {"title": request.form["title"], "author": request.form.get("author"), "summary": request.form.get("summary"), "content": request.form.get("content"), "status": request.form.get("status", "draft"), "category_id": request.form.get("category_id")}
+    return {
+        "title": request.form.get("title", ""),
+        "slug": request.form.get("slug"),
+        "author": request.form.get("author"),
+        "summary": request.form.get("summary"),
+        "content": request.form.get("content"),
+        "image_url": request.form.get("image_url"),
+        "source_url": request.form.get("source_url"),
+        "category_id": request.form.get("category_id"),
+    }

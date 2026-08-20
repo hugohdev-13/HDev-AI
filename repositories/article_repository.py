@@ -9,11 +9,17 @@ class ArticleRepository:
 
     @staticmethod
     def get_all():
-        return Article.query.options(selectinload(Article.category)).all()
+        return Article.query.options(
+            selectinload(Article.category),
+            selectinload(Article.source),
+        ).all()
 
     @staticmethod
     def get_by_id(article_id):
-        return Article.query.options(selectinload(Article.category)).filter_by(id=article_id).first()
+        return Article.query.options(
+            selectinload(Article.category),
+            selectinload(Article.source),
+        ).filter_by(id=article_id).first()
 
     @staticmethod
     def create(article):
@@ -59,7 +65,10 @@ class ArticleRepository:
             query = query.filter(Article.category_id == category_id)
         if status:
             query = query.filter(Article.status == status)
-        return query.options(selectinload(Article.category)).order_by(Article.created_at.desc(), Article.id.desc())
+        return query.options(
+            selectinload(Article.category),
+            selectinload(Article.source),
+        ).order_by(Article.created_at.desc(), Article.id.desc())
 
     @staticmethod
     def paginate(

@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 import logging
 from typing import Any
+from urllib.parse import urlparse
 
 from slugify import slugify
 
@@ -54,7 +55,7 @@ class ArticleService:
         """Create and commit an article before any automatic analysis begins."""
         data = ArticleService.normalize_and_validate(data)
         title = data["title"]
-        base_slug = slugify(title)
+        base_slug = data.get("slug") or slugify(title)
         slug = base_slug
         counter = 2
         while ArticleRepository.get_by_slug(slug):
@@ -115,9 +116,24 @@ class ArticleService:
         article = ArticleRepository.get_by_id(article_id)
         if article is None:
             return ArticleUpdateResult(None, set())
-        data = ArticleService.normalize_and_validate(data, article.category_id)
+        data = ArticleService.normalize_and_validate(
+            data,
+            article.category_id,
+            article_id,
+        )
         changed_fields: set[str] = set()
-        for field_name in ("title", "author", "summary", "content", "category_id"):
+        for field_name in (
+            "title",
+            "slug",
+            "author",
+            "summary",
+            "content",
+            "image_url",
+            "source_url",
+            "category_id",
+        ):
+            if field_name not in data:
+                continue
             current_value = getattr(article, field_name)
             new_value = data.get(field_name, current_value)
             if not ArticleService._values_equivalent(current_value, new_value):
@@ -178,11 +194,15 @@ class ArticleService:
         }
 
     @staticmethod
-    def normalize_and_validate(data: dict[str, Any], current_category_id: int | None = None) -> dict[str, Any]:
+    def normalize_and_validate(
+        data: dict[str, Any],
+        current_category_id: int | None = None,
+        article_id: int | None = None,
+    ) -> dict[str, Any]:
         """Normalize form input and enforce article business invariants."""
         normalized = {field: (value.strip() if isinstance(value, str) else value) for field, value in data.items()}
         errors = {}
-        title, content, status = normalized.get("title", ""), normalized.get("content", ""), normalized.get("status", "draft")
+        title, content, status = normalized.get("title", ""), normalized.get("content", ""), normalized.get("status", ArticleStatus.DRAFT)
         raw_category_id = normalized.get("category_id")
         if raw_category_id in (None, "", "0"):
             normalized["category_id"] = None
@@ -199,9 +219,26 @@ class ArticleService:
                 normalized["category_id"] = category_id
             except (TypeError, ValueError):
                 errors["category_id"] = "La categoría seleccionada no es válida."
+        slug = normalized.get("slug", "") or ""
+        if "slug" in normalized and slug:
+            slug = slugify(slug)
+            existing = ArticleRepository.get_by_slug(slug)
+            if existing is not None and existing.id != article_id:
+                errors["slug"] = "El slug ya está siendo utilizado por otro artículo."
+            normalized["slug"] = slug
         if not isinstance(title, str) or not 3 <= len(title) <= 250: errors["title"] = "El título debe tener entre 3 y 250 caracteres."
         if not isinstance(content, str) or not content: errors["content"] = "El contenido es obligatorio."
         if status not in ArticleStatus.LABELS: errors["status"] = "El estado seleccionado no es válido."
+        if normalized.get("author") and len(normalized["author"]) > 150: errors["author"] = "El autor no puede exceder 150 caracteres."
+        for field_name, label in (("image_url", "La URL de imagen"), ("source_url", "La URL de origen")):
+            if field_name not in normalized:
+                continue
+            value = normalized.get(field_name) or ""
+            if value:
+                parsed = urlparse(value)
+                if len(value) > 500 or parsed.scheme not in {"http", "https"} or not parsed.netloc:
+                    errors[field_name] = f"{label} debe ser una URL http o https válida."
+            normalized[field_name] = value or None
         if errors: raise ArticleValidationError(errors)
         return normalized
 
