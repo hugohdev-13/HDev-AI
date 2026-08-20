@@ -10,6 +10,8 @@ def test_dashboard_data_includes_rss_health_summary(repository, health_summary, 
     repository.total_articles.return_value = 0
     repository.published_articles.return_value = 0
     repository.draft_articles.return_value = 0
+    repository.review_articles.return_value = 0
+    repository.approved_articles.return_value = 0
     repository.analyzed_articles.return_value = 0
     repository.total_users.return_value = 0
     repository.active_users.return_value = 0

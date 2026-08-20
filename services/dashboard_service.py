@@ -18,6 +18,8 @@ class DashboardService:
             "total_articles": repository.total_articles() or 0,
             "published_articles": repository.published_articles() or 0,
             "draft_articles": repository.draft_articles() or 0,
+            "review_articles": repository.review_articles() or 0,
+            "approved_articles": repository.approved_articles() or 0,
             "analyzed_articles": repository.analyzed_articles() or 0,
             "total_users": repository.total_users() or 0,
             "active_users": repository.active_users() or 0,

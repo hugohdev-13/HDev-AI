@@ -47,8 +47,9 @@
                 <select class="form-select" id="status" name="status">
                     <option value="">Todos</option>
                     <option value="draft" {% if selected_status == 'draft' %}selected{% endif %}>Borrador</option>
+                    <option value="review" {% if selected_status == 'review' %}selected{% endif %}>En revisión</option>
+                    <option value="approved" {% if selected_status == 'approved' %}selected{% endif %}>Aprobado</option>
                     <option value="published" {% if selected_status == 'published' %}selected{% endif %}>Publicado</option>
-                    <option value="archived" {% if selected_status == 'archived' %}selected{% endif %}>Archivado</option>
                 </select>
             </div>
             <div class="col-12 col-md-auto d-grid">
@@ -96,12 +97,13 @@
                         </td>
                         <td>
                             <span class="status-badge status-badge--{{ article.status }}">
-                                {{ 'Publicado' if article.status == 'published' else 'Borrador' if article.status == 'draft' else 'Archivado' }}
+                                {{ 'Borrador' if article.status == 'draft' else 'En revisión' if article.status == 'review' else 'Aprobado' if article.status == 'approved' else 'Publicado' if article.status == 'published' else article.status }}
                             </span>
                         </td>
                         <td class="text-muted small">{{ article.updated_at.strftime('%d/%m/%Y') if article.updated_at else '—' }}</td>
                         <td>
-                            <div class="d-flex justify-content-end gap-2">
+                            <div class="d-flex flex-wrap justify-content-end gap-2">
+                                {% if article.status == 'draft' %}<form method="post" action="{{ url_for('articles.transition_status', article_id=article.id) }}"><input type="hidden" name="status" value="review"><button class="btn btn-sm btn-outline-primary" type="submit">Enviar a revisión</button></form>{% elif article.status == 'review' %}<form method="post" action="{{ url_for('articles.transition_status', article_id=article.id) }}"><input type="hidden" name="status" value="draft"><button class="btn btn-sm btn-light border" type="submit">Volver a borrador</button></form><form method="post" action="{{ url_for('articles.transition_status', article_id=article.id) }}"><input type="hidden" name="status" value="approved"><button class="btn btn-sm btn-success" type="submit">Aprobar</button></form>{% elif article.status == 'approved' %}<form method="post" action="{{ url_for('articles.transition_status', article_id=article.id) }}"><input type="hidden" name="status" value="review"><button class="btn btn-sm btn-light border" type="submit">Volver a revisión</button></form><form method="post" action="{{ url_for('articles.transition_status', article_id=article.id) }}"><input type="hidden" name="status" value="published"><button class="btn btn-sm btn-success" type="submit">Publicar</button></form>{% elif article.status == 'published' %}<form method="post" action="{{ url_for('articles.transition_status', article_id=article.id) }}"><input type="hidden" name="status" value="draft"><button class="btn btn-sm btn-outline-secondary" type="submit">Despublicar</button></form>{% endif %}
                                 <a class="btn btn-sm btn-light border" href="{{ url_for('articles.edit', article_id=article.id) }}" aria-label="Editar {{ article.title }}"><i class="bi bi-pencil"></i></a>
                                 <form method="post" action="{{ url_for('articles.delete', article_id=article.id) }}" onsubmit="return confirm('¿Seguro que deseas eliminar este artículo?');">
                                     <button class="btn btn-sm btn-light border text-danger" type="submit" aria-label="Eliminar {{ article.title }}"><i class="bi bi-trash"></i></button>

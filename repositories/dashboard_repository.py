@@ -40,6 +40,18 @@ class DashboardRepository:
         )
 
     @classmethod
+    def review_articles(cls):
+        return cls._count(
+            select(func.count()).select_from(Article).where(Article.status == "review")
+        )
+
+    @classmethod
+    def approved_articles(cls):
+        return cls._count(
+            select(func.count()).select_from(Article).where(Article.status == "approved")
+        )
+
+    @classmethod
     def analyzed_articles(cls):
         return cls._count(
             select(func.count())

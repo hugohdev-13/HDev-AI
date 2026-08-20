@@ -7,6 +7,7 @@ from typing import Any
 
 from slugify import slugify
 
+from core.article_status import ArticleStatus
 from models import Article
 from repositories.article_repository import ArticleRepository
 from services.category_service import CategoryService
@@ -59,7 +60,7 @@ class ArticleService:
         while ArticleRepository.get_by_slug(slug):
             slug = f"{base_slug}-{counter}"
             counter += 1
-        article = Article(title=title, slug=slug, external_id=data.get("external_id"), summary=data.get("summary"), content=data.get("content"), image_url=data.get("image_url"), source_url=data.get("source_url"), author=data.get("author"), category_id=data.get("category_id"), source_id=data.get("source_id"), status=data.get("status", "draft"), published_at=data.get("published_at"))
+        article = Article(title=title, slug=slug, external_id=data.get("external_id"), summary=data.get("summary"), content=data.get("content"), image_url=data.get("image_url"), source_url=data.get("source_url"), author=data.get("author"), category_id=data.get("category_id"), source_id=data.get("source_id"), status=ArticleStatus.DRAFT, published_at=None)
         return ArticleRepository.create(article)
 
     @staticmethod
@@ -116,15 +117,12 @@ class ArticleService:
             return ArticleUpdateResult(None, set())
         data = ArticleService.normalize_and_validate(data, article.category_id)
         changed_fields: set[str] = set()
-        for field_name in ("title", "author", "summary", "content", "status", "category_id"):
+        for field_name in ("title", "author", "summary", "content", "category_id"):
             current_value = getattr(article, field_name)
             new_value = data.get(field_name, current_value)
             if not ArticleService._values_equivalent(current_value, new_value):
                 setattr(article, field_name, new_value)
                 changed_fields.add(field_name)
-        if article.status == "published" and article.published_at is None:
-            article.published_at = datetime.now(timezone.utc).replace(tzinfo=None)
-            changed_fields.add("published_at")
         ArticleRepository.update()
         return ArticleUpdateResult(article, changed_fields)
 
@@ -170,7 +168,7 @@ class ArticleService:
                 pass
 
         normalized_status = (status or "").strip()
-        if normalized_status not in {"draft", "published", "archived"}:
+        if normalized_status not in {*ArticleStatus.LABELS, "archived"}:
             normalized_status = None
 
         return {
@@ -203,7 +201,7 @@ class ArticleService:
                 errors["category_id"] = "La categoría seleccionada no es válida."
         if not isinstance(title, str) or not 3 <= len(title) <= 250: errors["title"] = "El título debe tener entre 3 y 250 caracteres."
         if not isinstance(content, str) or not content: errors["content"] = "El contenido es obligatorio."
-        if status not in {"draft", "published", "archived"}: errors["status"] = "El estado seleccionado no es válido."
+        if status not in ArticleStatus.LABELS: errors["status"] = "El estado seleccionado no es válido."
         if errors: raise ArticleValidationError(errors)
         return normalized
 

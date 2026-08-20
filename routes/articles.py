@@ -8,6 +8,7 @@ from core.audit import log_audit_event
 from core.decorators import permission_required
 from core.permissions import Permissions
 from services.article_service import ArticleService, ArticleValidationError
+from services.article_workflow_service import ArticleWorkflowError, ArticleWorkflowService
 from services.category_service import CategoryService
 
 
@@ -109,6 +110,33 @@ def delete(article_id):
         flash("Artículo eliminado correctamente.", "success")
     else:
         flash("No se encontró el artículo.", "danger")
+    return redirect(url_for("articles.index"))
+
+
+@articles_bp.post("/<int:article_id>/status")
+@login_required
+@permission_required(Permissions.ARTICLES_EDIT)
+def transition_status(article_id):
+    """Apply a validated editorial transition from the article list."""
+    try:
+        article = ArticleWorkflowService.transition(
+            article_id,
+            request.form.get("status"),
+            actor=current_user,
+        )
+    except ArticleWorkflowError as error:
+        flash(str(error), "danger")
+        return redirect(url_for("articles.index"))
+    if article is None:
+        flash("No se encontró el artículo.", "danger")
+    else:
+        log_audit_event(
+            "article.status_changed",
+            user_id=current_user.id,
+            article_id=article.id,
+            status=article.status,
+        )
+        flash("Estado editorial actualizado correctamente.", "success")
     return redirect(url_for("articles.index"))
 
 
