@@ -70,6 +70,11 @@ def edit(article_id):
     if article is None:
         flash("Artículo no encontrado.", "danger")
         return redirect(url_for("articles.index"))
+    if article.status == "published":
+        flash(
+            "Estás editando un artículo publicado. Los cambios serán visibles en el sitio al guardar.",
+            "warning",
+        )
     categories = CategoryService.get_active_categories()
     if article.category and not article.category.is_active and article.category not in categories:
         categories.append(article.category)
@@ -106,6 +111,8 @@ def update(article_id):
         return redirect(url_for("articles.index"))
 
     log_audit_event("article.updated", user_id=current_user.id, article_id=result.article.id)
+    if result.workflow_regressed:
+        flash("El artículo fue modificado y regresó a revisión.", "warning")
     if result.ai_analysis.status == AIProcessingStatus.COMPLETED:
         flash("Artículo actualizado y reanalizado correctamente.", "success")
     else:

@@ -29,6 +29,7 @@ class ArticleUpdateResult:
     """Typed internal result for a saved article update and changed fields."""
     article: Article | None
     changed_fields: set[str]
+    workflow_regressed: bool = False
 
 
 @dataclass(slots=True)
@@ -37,6 +38,7 @@ class ArticleMutationResult:
     article: Article
     ai_analysis: AutomaticAnalysisResult
     changed_fields: set[str]
+    workflow_regressed: bool = False
 
 
 class ArticleService:
@@ -139,8 +141,22 @@ class ArticleService:
             if not ArticleService._values_equivalent(current_value, new_value):
                 setattr(article, field_name, new_value)
                 changed_fields.add(field_name)
+        workflow_regressed = False
+        editorial_fields = {
+            "title",
+            "slug",
+            "summary",
+            "content",
+            "author",
+            "category_id",
+            "image_url",
+        }
+        if article.status == ArticleStatus.APPROVED and changed_fields & editorial_fields:
+            article.status = ArticleStatus.REVIEW
+            changed_fields.add("status")
+            workflow_regressed = True
         ArticleRepository.update()
-        return ArticleUpdateResult(article, changed_fields)
+        return ArticleUpdateResult(article, changed_fields, workflow_regressed)
 
     @staticmethod
     def update_article_with_analysis(article_id: int, data: dict[str, Any], automatic_analysis_service: AutomaticAnalysisService | None = None) -> ArticleMutationResult | None:
@@ -149,7 +165,15 @@ class ArticleService:
         if update_result.article is None:
             return None
         coordinator = automatic_analysis_service or AutomaticAnalysisService()
-        return ArticleMutationResult(update_result.article, coordinator.analyze_after_update(update_result.article, update_result.changed_fields), update_result.changed_fields)
+        return ArticleMutationResult(
+            update_result.article,
+            coordinator.analyze_after_update(
+                update_result.article,
+                update_result.changed_fields,
+            ),
+            update_result.changed_fields,
+            update_result.workflow_regressed,
+        )
 
     @staticmethod
     def search_articles(search_term=None, category_id=None, status=None):

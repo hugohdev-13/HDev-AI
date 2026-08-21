@@ -5,6 +5,7 @@ from unittest.mock import patch
 import pytest
 
 from services.article_service import ArticleService, ArticleValidationError
+from services.automatic_analysis_service import AutomaticAnalysisResult
 
 
 def _article():
@@ -73,3 +74,45 @@ def test_editor_rejects_required_title_and_invalid_image_url():
         )
     assert "title" in error.value.errors
     assert "image_url" in error.value.errors
+
+
+@patch("services.article_service.ArticleRepository")
+def test_editing_approved_editorial_content_returns_article_to_review(repository):
+    article = _article()
+    article.status = "approved"
+    repository.get_by_id.return_value = article
+    result = ArticleService.update_article_with_changes(
+        1,
+        {"title": "Título actualizado", "content": article.content},
+    )
+    assert result.article.status == "review"
+    assert result.workflow_regressed is True
+
+
+@patch("services.article_service.ArticleRepository")
+def test_editing_published_content_preserves_published_status(repository):
+    article = _article()
+    repository.get_by_id.return_value = article
+    result = ArticleService.update_article_with_changes(
+        1,
+        {"title": "Título actualizado", "content": article.content, "published_at": None},
+    )
+    assert result.article.status == "published"
+    assert result.article.published_at == datetime(2026, 8, 1)
+
+
+@patch("services.article_service.ArticleRepository")
+def test_mutation_result_propagates_workflow_regression(repository):
+    article = _article()
+    article.status = "approved"
+    repository.get_by_id.return_value = article
+    coordinator = SimpleNamespace(
+        analyze_after_update=lambda *_: AutomaticAnalysisResult(False, None, None, None)
+    )
+    result = ArticleService.update_article_with_analysis(
+        1,
+        {"title": "Título actualizado", "content": article.content},
+        coordinator,
+    )
+    assert result.article.status == "review"
+    assert result.workflow_regressed is True

@@ -63,6 +63,20 @@ como contexto, sin permitir modificar la fuente asociada. Un artículo publicado
 puede editar sus campos de contenido con el comportamiento actual; no hay aún
 versionado ni regreso automático a revisión.
 
+## Endurecimiento editorial
+
+Para avanzar desde borrador a revisión, desde revisión a aprobado y desde
+aprobado a publicado, el artículo debe contener título, slug, resumen y
+contenido. Al publicar se comprueba además que el slug siga siendo único. La
+imagen, categoría y URL de origen son opcionales.
+
+Editar campos editoriales relevantes de un artículo `approved` (título, slug,
+resumen, contenido, autor, categoría o imagen) lo devuelve automáticamente a
+`review` para una nueva aprobación. Los artículos `published` conservan su
+estado al editarse y el editor advierte que los cambios serán visibles. Al
+despublicar (`published` → `draft`), `published_at` se conserva como dato
+histórico; este campo sigue protegido contra entrada desde formularios.
+
 ## Vista previa editorial
 
 `GET /articles/<id>/preview` es una ruta administrativa protegida por login y
