@@ -62,3 +62,12 @@ formulario. Las transiciones continúan siendo exclusivas de
 como contexto, sin permitir modificar la fuente asociada. Un artículo publicado
 puede editar sus campos de contenido con el comportamiento actual; no hay aún
 versionado ni regreso automático a revisión.
+
+## Vista previa editorial
+
+`GET /articles/<id>/preview` es una ruta administrativa protegida por login y
+`articles.view`. Permite visualizar artículos `draft`, `review`, `approved` y
+`published` con el layout público, pero no realiza persistencia ni cambia
+`status` o `published_at`. La vista se identifica con un banner y enlaces de
+retorno al editor y listado. A diferencia de esta preview, las consultas
+públicas continúan filtrando exclusivamente `status == "published"`.

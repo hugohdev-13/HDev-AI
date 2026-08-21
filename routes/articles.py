@@ -1,6 +1,6 @@
 """Web article routes that delegate optional AI analysis to ArticleService."""
 
-from flask import Blueprint, flash, redirect, render_template, request, url_for
+from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 
 from core.ai_status import AIProcessingStatus
@@ -74,6 +74,21 @@ def edit(article_id):
     if article.category and not article.category.is_active and article.category not in categories:
         categories.append(article.category)
     return render_template("articles/form.html", article=article, categories=categories)
+
+
+@articles_bp.get("/<int:article_id>/preview")
+@login_required
+@permission_required(Permissions.ARTICLES_VIEW)
+def preview(article_id):
+    """Render a protected, non-mutating public-style editorial preview."""
+    article = ArticleService.get_article(article_id)
+    if article is None:
+        abort(404)
+    return render_template(
+        "articles/preview.html",
+        article=article,
+        is_authenticated=current_user.is_authenticated,
+    )
 
 
 @articles_bp.post("/<int:article_id>/edit")
