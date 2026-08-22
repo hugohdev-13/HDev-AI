@@ -24,6 +24,7 @@ class Config:
         self.SECRET_KEY = os.getenv("SECRET_KEY")
         self.N8N_API_KEY = os.getenv("N8N_API_KEY")
         self.LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
+        self.APP_TIMEZONE = os.getenv("APP_TIMEZONE", "America/Mexico_City")
         self.SQLALCHEMY_DATABASE_URI = self._database_uri()
         self.SQLALCHEMY_TRACK_MODIFICATIONS = False
         self.SQLALCHEMY_ENGINE_OPTIONS = {"pool_pre_ping": True, "pool_recycle": 1800}
@@ -86,6 +87,7 @@ class TestingConfig(Config):
         self.SECRET_KEY = "testing-only-secret"
         self.N8N_API_KEY = os.getenv("N8N_API_KEY", "test-n8n-key")
         self.LOG_LEVEL = "WARNING"
+        self.APP_TIMEZONE = "America/Mexico_City"
         self.SQLALCHEMY_DATABASE_URI = "sqlite://"
         self.SQLALCHEMY_TRACK_MODIFICATIONS = False
         self.SQLALCHEMY_ENGINE_OPTIONS = {}

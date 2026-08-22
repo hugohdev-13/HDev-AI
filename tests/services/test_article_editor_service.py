@@ -21,6 +21,7 @@ def _article():
         category_id=None,
         status="published",
         published_at=datetime(2026, 8, 1),
+        scheduled_publish_at=None,
     )
 
 
@@ -80,6 +81,7 @@ def test_editor_rejects_required_title_and_invalid_image_url():
 def test_editing_approved_editorial_content_returns_article_to_review(repository):
     article = _article()
     article.status = "approved"
+    article.scheduled_publish_at = datetime(2026, 9, 1, 9, 0)
     repository.get_by_id.return_value = article
     result = ArticleService.update_article_with_changes(
         1,
@@ -87,6 +89,7 @@ def test_editing_approved_editorial_content_returns_article_to_review(repository
     )
     assert result.article.status == "review"
     assert result.workflow_regressed is True
+    assert result.article.scheduled_publish_at is None
 
 
 @patch("services.article_service.ArticleRepository")

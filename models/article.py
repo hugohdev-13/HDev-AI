@@ -53,6 +53,11 @@ class Article(db.Model):
         index=True
     )
 
+    scheduled_publish_at = db.Column(
+        db.DateTime,
+        nullable=True,
+    )
+
     created_at = db.Column(
         db.DateTime,
         server_default=db.func.now()

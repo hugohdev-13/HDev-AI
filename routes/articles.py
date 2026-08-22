@@ -1,6 +1,17 @@
 """Web article routes that delegate optional AI analysis to ArticleService."""
 
-from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
+from datetime import datetime
+
+from flask import (
+    Blueprint,
+    abort,
+    current_app,
+    flash,
+    redirect,
+    render_template,
+    request,
+    url_for,
+)
 from flask_login import current_user, login_required
 
 from core.ai_status import AIProcessingStatus
@@ -9,6 +20,7 @@ from core.decorators import permission_required
 from core.permissions import Permissions
 from services.article_service import ArticleService, ArticleValidationError
 from services.article_workflow_service import ArticleWorkflowError, ArticleWorkflowService
+from services.article_scheduling_service import ArticleSchedulingError, ArticleSchedulingService
 from services.category_service import CategoryService
 
 
@@ -25,6 +37,12 @@ def index():
     page = request.args.get("page", 1, type=int)
     filters = ArticleService.normalize_list_filters(search, category_id, status)
     pagination = ArticleService.get_paginated_articles(page=page, **filters)
+    timezone_name = current_app.config["APP_TIMEZONE"]
+    for article in pagination.items:
+        article.scheduled_publish_at_local = ArticleSchedulingService.utc_to_local(
+            article.scheduled_publish_at,
+            timezone_name,
+        )
     return render_template(
         "articles/index.html",
         articles=pagination.items,
@@ -159,6 +177,44 @@ def transition_status(article_id):
             status=article.status,
         )
         flash("Estado editorial actualizado correctamente.", "success")
+    return redirect(url_for("articles.index"))
+
+
+@articles_bp.post("/<int:article_id>/schedule")
+@login_required
+@permission_required(Permissions.ARTICLES_EDIT)
+def schedule(article_id):
+    """Interpret the browser's local datetime value before saving it in UTC."""
+    raw_scheduled_at = request.form.get("scheduled_publish_at", "")
+    try:
+        local_scheduled_at = datetime.fromisoformat(raw_scheduled_at)
+        scheduled_at = ArticleSchedulingService.local_to_utc(
+            local_scheduled_at,
+            current_app.config["APP_TIMEZONE"],
+        )
+        article = ArticleSchedulingService.schedule(article_id, scheduled_at)
+    except (ValueError, ArticleSchedulingError) as error:
+        flash(str(error) or "La fecha programada no es válida.", "danger")
+        return redirect(url_for("articles.index"))
+    if article is None:
+        flash("No se encontró el artículo.", "danger")
+    else:
+        log_audit_event("article.scheduled", user_id=current_user.id, article_id=article.id)
+        flash("Publicación programada correctamente.", "success")
+    return redirect(url_for("articles.index"))
+
+
+@articles_bp.post("/<int:article_id>/cancel-schedule")
+@login_required
+@permission_required(Permissions.ARTICLES_EDIT)
+def cancel_schedule(article_id):
+    """Cancel a pending publication schedule without changing article status."""
+    article = ArticleSchedulingService.cancel(article_id)
+    if article is None:
+        flash("No se encontró el artículo.", "danger")
+    else:
+        log_audit_event("article.schedule_cancelled", user_id=current_user.id, article_id=article.id)
+        flash("Publicación programada cancelada.", "success")
     return redirect(url_for("articles.index"))
 
 

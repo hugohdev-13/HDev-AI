@@ -9,6 +9,12 @@ draft -> review -> approved -> published
              draft <- published
 ```
 
+Un artículo aprobado puede tener una programación opcional antes de publicarse:
+
+```text
+draft -> review -> approved -> scheduled (opcional) -> published
+```
+
 Las transiciones permitidas son:
 
 - `draft` → `review`
@@ -41,6 +47,20 @@ seguridad principal.
 La transición `approved` → `published` establece `published_at` si aún no
 existe. La transición `published` → `draft` limpia `published_at`, para que el
 artículo deje de considerarse publicado en consultas y vistas existentes.
+
+`scheduled_publish_at` no es un estado: conserva el artículo como `approved`
+hasta que el comando de publicación automática realice la transición a
+`published`. La fecha se persiste como UTC; el formulario interpreta el valor
+local en `America/Mexico_City` y el dashboard lo muestra nuevamente en esa zona.
+El comando externo es:
+
+```powershell
+python -m flask --app app.py publish-scheduled
+```
+
+Si el comando encuentra una programación vencida, publica mediante
+`ArticleWorkflowService`. El dashboard solo advierte sobre estas publicaciones;
+nunca cambia estados desde una petición web.
 
 ## Compatibilidad
 

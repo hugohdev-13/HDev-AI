@@ -51,6 +51,19 @@ class ArticleRepository:
         return Article.query.filter_by(source_url=source_url).first()
 
     @staticmethod
+    def list_due_for_publication(now):
+        """Fetch only approved articles whose UTC schedule is due."""
+        return (
+            Article.query.filter(
+                Article.status == "approved",
+                Article.scheduled_publish_at.is_not(None),
+                Article.scheduled_publish_at <= now,
+            )
+            .order_by(Article.scheduled_publish_at.asc(), Article.id.asc())
+            .all()
+        )
+
+    @staticmethod
     def search(
         search_term: str | None = None,
         category_id: int | None = None,

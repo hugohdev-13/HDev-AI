@@ -30,6 +30,7 @@ from routes.health import health_bp
 from routes.public import public_bp
 from routes.categories import categories_bp
 from routes.sources import sources_bp
+from services.article_scheduling_service import ArticleSchedulingService
 from services.rss_scheduled_sync_service import RSSScheduledSyncService
 
 
@@ -84,6 +85,21 @@ def create_app(config_object=None):
         )
         if result.failed_sources:
             raise click.ClickException("Una o más fuentes RSS fallaron.")
+
+    @app.cli.command("publish-scheduled")
+    def publish_scheduled_command():
+        """Publish approved articles whose scheduled UTC time is due."""
+        result = ArticleSchedulingService.publish_due_articles()
+        click.echo(
+            "Scheduled publish: "
+            f"total={result.total}, "
+            f"published={result.published}, "
+            f"failed={result.failed}"
+        )
+        if result.failed:
+            raise click.ClickException(
+                "Una o más publicaciones programadas fallaron."
+            )
 
     @app.errorhandler(404)
     def not_found(error):

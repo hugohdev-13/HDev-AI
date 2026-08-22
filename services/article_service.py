@@ -153,6 +153,7 @@ class ArticleService:
         }
         if article.status == ArticleStatus.APPROVED and changed_fields & editorial_fields:
             article.status = ArticleStatus.REVIEW
+            article.scheduled_publish_at = None
             changed_fields.add("status")
             workflow_regressed = True
         ArticleRepository.update()

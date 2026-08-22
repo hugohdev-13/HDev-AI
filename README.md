@@ -76,3 +76,11 @@ database/ docs/ n8n/ tests/ static/ templates/
 ## Roadmap, screenshots, and license
 
 Planned: background AI processing, provider implementations, observability, CI/CD, and additional sources. Add portfolio screenshots under `docs/images/` before publishing. No license has been selected yet.
+# Editorial Workflow
+
+Los artículos recorren `draft → review → approved → published`, con preview
+editorial protegido y programación opcional desde el estado aprobado. La
+publicación programada se ejecuta externamente con `publish-scheduled` y usa
+UTC internamente, mostrando fechas en `America/Mexico_City`.
+
+Consulta [la guía completa del workflow editorial](docs/editorial_workflow.md).
