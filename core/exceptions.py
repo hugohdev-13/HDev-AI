@@ -7,3 +7,7 @@ class ArticleNotFoundError(Exception):
 
 class AIAnalysisProcessingError(Exception):
     """Raised when an analysis cannot be persisted safely."""
+
+
+class AIProviderNotConfiguredError(Exception):
+    """Raised when a remote AI provider lacks required backend configuration."""

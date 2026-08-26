@@ -1,4 +1,4 @@
-"""Environment-backed configuration for simulated AI providers."""
+"""Environment-backed configuration for local and remote AI providers."""
 
 import os
 
@@ -24,7 +24,8 @@ class AIConfig:
     """Centralizes AI behavior without exposing provider credentials."""
 
     AI_PROVIDER = os.getenv("AI_PROVIDER", "openai")
-    OPENAI_MODEL = os.getenv("OPENAI_MODEL", "mock-openai")
+    OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4.1-mini")
+    OPENAI_TIMEOUT_SECONDS = _get_positive_int("OPENAI_TIMEOUT_SECONDS", 30)
     GEMINI_MODEL = os.getenv("GEMINI_MODEL", "mock-gemini")
     AZURE_OPENAI_MODEL = os.getenv("AZURE_OPENAI_MODEL", "mock-azure")
     OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "mock-ollama")

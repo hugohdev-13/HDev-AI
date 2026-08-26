@@ -3,6 +3,8 @@
 from datetime import datetime, timezone
 
 from repositories.dashboard_repository import DashboardRepository
+from core.ai_status import AIProcessingStatus
+from services.ai_health_service import AIHealthService
 from services.rss_source_health_service import RSSSourceHealthService
 from services.source_service import SourceService
 
@@ -17,6 +19,9 @@ class DashboardService:
         source_health = RSSSourceHealthService.get_health_summary(
             SourceService.get_active_rss_sources()
         )
+        analysis_status_counts = repository.analysis_status_counts()
+        if not isinstance(analysis_status_counts, dict):
+            analysis_status_counts = {}
         return {
             "total_articles": repository.total_articles() or 0,
             "published_articles": repository.published_articles() or 0,
@@ -42,6 +47,23 @@ class DashboardService:
             "recently_published_articles": repository.recently_published_articles(5)
             or [],
             "rss_health": source_health,
+            "ai_health": AIHealthService().get_health_status(),
+            "analysis_metrics": {
+                "completed": int(
+                    analysis_status_counts.get(AIProcessingStatus.COMPLETED, 0) or 0
+                ),
+                "failed": int(
+                    analysis_status_counts.get(AIProcessingStatus.FAILED, 0) or 0
+                ),
+                "pending": sum(
+                    int(analysis_status_counts.get(status, 0) or 0)
+                    for status in (
+                        AIProcessingStatus.PENDING,
+                        AIProcessingStatus.QUEUED,
+                        AIProcessingStatus.PROCESSING,
+                    )
+                ),
+            },
         }
 
     @staticmethod

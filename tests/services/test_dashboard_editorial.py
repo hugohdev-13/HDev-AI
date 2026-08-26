@@ -44,6 +44,11 @@ def test_dashboard_aggregates_editorial_counts_without_mutating_articles(
     repository.upcoming_scheduled_articles.return_value = []
     repository.overdue_scheduled_articles.return_value = []
     repository.recently_published_articles.return_value = []
+    repository.analysis_status_counts.return_value = {
+        "completed": 4,
+        "failed": 1,
+        "pending": 2,
+    }
     health_summary.return_value = _rss_health()
 
     dashboard_data = DashboardService.get_dashboard_data()
@@ -54,6 +59,11 @@ def test_dashboard_aggregates_editorial_counts_without_mutating_articles(
     assert dashboard_data["scheduled_articles"] == 1
     assert dashboard_data["published_articles"] == 2
     assert dashboard_data["rss_health"]["global_status"] == "operational"
+    assert dashboard_data["analysis_metrics"] == {
+        "completed": 4,
+        "failed": 1,
+        "pending": 2,
+    }
     assert not hasattr(repository, "update") or not repository.update.called
 
 
@@ -91,6 +101,7 @@ def test_dashboard_preserves_upcoming_and_overdue_article_lists(
         {"id": 1, "title": "Vencido", "scheduled_publish_at": datetime(2026, 8, 20, 21, 0)}
     ]
     repository.recently_published_articles.return_value = []
+    repository.analysis_status_counts.return_value = {}
     health_summary.return_value = _rss_health()
 
     dashboard_data = DashboardService.get_dashboard_data()

@@ -74,6 +74,18 @@ class DashboardRepository:
             )
         )
 
+    @staticmethod
+    def analysis_status_counts() -> dict[str, int]:
+        """Aggregate persisted analysis states in one database query."""
+        statement = select(
+            ArticleAnalysis.status,
+            func.count(ArticleAnalysis.id).label("count"),
+        ).group_by(ArticleAnalysis.status)
+        return {
+            str(row.status or "unknown"): int(row.count or 0)
+            for row in db.session.execute(statement)
+        }
+
     @classmethod
     def total_users(cls):
         return cls._count(

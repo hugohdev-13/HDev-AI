@@ -46,6 +46,16 @@ Configure every required value in `.env`; never commit it. `SECRET_KEY`, SQL Ser
 
 The suite uses mocks for AI and does not require n8n or an external provider.
 
+## AI operations
+
+The dashboard exposes a safe AI readiness panel with provider, model,
+configuration status, automatic-analysis state and persisted `ArticleAnalysis`
+counts. Loading it does not call an external provider or consume tokens.
+Editorial suggestions and reviews remain ephemeral and require human action.
+OpenAI failures, including quota or rate-limit responses, are handled safely
+without changing editorial workflow. See [AI operations](docs/ai_operations.md)
+and [AI architecture](docs/ai_architecture.md).
+
 ## RSS Automation
 
 HDev AI sincroniza fuentes RSS manualmente desde **Fuentes** o de forma diaria

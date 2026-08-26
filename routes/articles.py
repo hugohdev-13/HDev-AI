@@ -7,6 +7,7 @@ from flask import (
     abort,
     current_app,
     flash,
+    jsonify,
     redirect,
     render_template,
     request,
@@ -22,6 +23,9 @@ from services.article_service import ArticleService, ArticleValidationError
 from services.article_workflow_service import ArticleWorkflowError, ArticleWorkflowService
 from services.article_scheduling_service import ArticleSchedulingError, ArticleSchedulingService
 from services.category_service import CategoryService
+from services.editorial_assistant_service import EditorialAssistantService
+from services.editorial_review_service import EditorialReviewService
+from core.exceptions import ArticleNotFoundError
 
 
 articles_bp = Blueprint("articles", __name__, url_prefix="/articles")
@@ -112,6 +116,44 @@ def preview(article_id):
         article=article,
         is_authenticated=current_user.is_authenticated,
     )
+
+
+@articles_bp.post("/<int:article_id>/editorial-suggestions")
+@login_required
+@permission_required(Permissions.ARTICLES_EDIT)
+def editorial_suggestions(article_id):
+    """Return ephemeral suggestions; accepting them remains a browser action."""
+    try:
+        suggestions = EditorialAssistantService().generate_suggestions(article_id)
+    except ArticleNotFoundError:
+        return jsonify({"message": "Artículo no encontrado."}), 404
+
+    log_audit_event(
+        "article.editorial_suggestions_generated",
+        user_id=current_user.id,
+        article_id=article_id,
+        status=suggestions.status,
+    )
+    return jsonify({"suggestions": suggestions.to_dict()})
+
+
+@articles_bp.post("/<int:article_id>/editorial-review")
+@login_required
+@permission_required(Permissions.ARTICLES_EDIT)
+def editorial_review(article_id):
+    """Return an advisory, non-persistent editorial quality review as JSON."""
+    try:
+        review = EditorialReviewService().review_article(article_id)
+    except ArticleNotFoundError:
+        return jsonify({"message": "Artículo no encontrado."}), 404
+
+    log_audit_event(
+        "article.editorial_review_generated",
+        user_id=current_user.id,
+        article_id=article_id,
+        status=review.status,
+    )
+    return jsonify({"review": review.to_dict()})
 
 
 @articles_bp.post("/<int:article_id>/edit")
