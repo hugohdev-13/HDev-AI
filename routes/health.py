@@ -24,6 +24,9 @@ def database_health():
     try:
         db.session.execute(text("SELECT 1"))
         return jsonify({"status": "ok", "service": "hdev-ai"})
-    except Exception:
-        logger.exception("Database health check failed")
+    except Exception as error:
+        logger.warning(
+            "Database health check failed error_type=%s",
+            error.__class__.__name__,
+        )
         return jsonify({"status": "unavailable", "service": "hdev-ai"}), 503

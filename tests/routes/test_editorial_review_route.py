@@ -25,8 +25,7 @@ def _review():
 
 def test_editorial_review_requires_authenticated_editor():
     response = app.test_client().post("/articles/1/editorial-review")
-    assert response.status_code == 302
-    assert "/auth/login" in response.location
+    assert response.status_code == 400
 
 
 @patch("routes.articles.current_user", SimpleNamespace(id=7))

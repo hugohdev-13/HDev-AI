@@ -55,7 +55,10 @@
             const response = await fetch(reviewContainer.dataset.reviewUrl, {
                 method: "POST",
                 credentials: "same-origin",
-                headers: {Accept: "application/json"},
+                headers: {
+                    Accept: "application/json",
+                    "X-CSRFToken": window.HDevAI?.getCsrfToken?.() || "",
+                },
             });
             const payload = await response.json();
             if (!response.ok || !payload.review || payload.review.status === "failed") {

@@ -1,7 +1,8 @@
 import logging
 
 import click
-from flask import Flask, render_template, request
+from flask import Flask, jsonify, render_template, request
+from flask_wtf.csrf import CSRFError
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 from config import get_config
@@ -9,7 +10,7 @@ from config import get_config
 from core.context_processors import register_context_processors
 from core.audit import log_audit_event
 
-from extensions import db, migrate, login_manager
+from extensions import csrf, db, migrate, login_manager
 
 from models import (
     Article,
@@ -51,6 +52,7 @@ def create_app(config_object=None):
 
     db.init_app(app)
     migrate.init_app(app, db)
+    csrf.init_app(app)
 
     login_manager.init_app(app)
 
@@ -63,6 +65,9 @@ def create_app(config_object=None):
     app.register_blueprint(home_bp)
     app.register_blueprint(api_articles)
     app.register_blueprint(api_integrations)
+    # n8n is machine-to-machine and authenticated exclusively with X-API-Key;
+    # it cannot supply a browser session CSRF token.
+    csrf.exempt(api_integrations)
     app.register_blueprint(articles_bp)
     app.register_blueprint(categories_bp)
     app.register_blueprint(sources_bp)
@@ -115,6 +120,32 @@ def create_app(config_object=None):
     def internal_error(error):
         app.logger.exception("Unhandled internal server error")
         return render_template("errors/500.html"), 500
+
+    @app.errorhandler(CSRFError)
+    def handle_csrf_error(error):
+        """Return a safe response without revealing expected token details."""
+        if request.accept_mimetypes.best == "application/json" or request.path.startswith("/api/"):
+            return jsonify({"error": "csrf_failed", "message": "Solicitud no válida."}), 400
+        return render_template("errors/400.html"), 400
+
+    @app.after_request
+    def add_security_headers(response):
+        """Apply baseline headers without introducing a disruptive CSP yet."""
+        response.headers.setdefault("X-Content-Type-Options", "nosniff")
+        response.headers.setdefault(
+            "Referrer-Policy",
+            "strict-origin-when-cross-origin",
+        )
+        response.headers.setdefault(
+            "Permissions-Policy",
+            "camera=(), geolocation=(), microphone=()",
+        )
+        if app.config.get("APP_ENV") == "production":
+            response.headers.setdefault(
+                "Strict-Transport-Security",
+                "max-age=31536000; includeSubDomains",
+            )
+        return response
 
     @login_manager.user_loader
     def load_user(user_id):

@@ -1,4 +1,5 @@
 from types import SimpleNamespace
+from unittest.mock import Mock
 
 from services.rss_feed_service import RSSFeedService
 from unittest.mock import patch
@@ -28,6 +29,28 @@ def test_safe_url_rejects_ssrf_targets():
         except ValueError:
             continue
         assert False, url
+
+
+@patch("services.rss_feed_service.requests.get")
+@patch("services.rss_feed_service.RSSFeedService.safe_url")
+def test_redirect_destination_is_validated_against_ssrf(mock_safe_url, mock_get):
+    mock_safe_url.side_effect = [
+        "https://example.com/feed",
+        ValueError("URL bloqueada por seguridad."),
+    ]
+    mock_get.return_value = SimpleNamespace(
+        status_code=302,
+        headers={"Location": "http://127.0.0.1/internal"},
+    )
+
+    try:
+        RSSFeedService.fetch_feed("https://example.com/feed")
+    except ValueError:
+        pass
+    else:
+        assert False, "The redirect target must be rejected."
+
+    mock_get.assert_called_once()
 
 
 @patch("services.rss_feed_service.SourceRepository.save")

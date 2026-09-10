@@ -19,6 +19,9 @@ def api_key_required(view: ViewFunction) -> ViewFunction:
 
     @wraps(view)
     def wrapped(*args, **kwargs):
+        if not current_app.config.get("N8N_INTEGRATION_ENABLED", True):
+            logger.info("N8N integration is disabled by configuration")
+            return _unauthorized_response()
         configured_key = current_app.config.get("N8N_API_KEY")
         provided_key = request.headers.get("X-API-Key")
 

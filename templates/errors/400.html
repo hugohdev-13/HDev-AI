@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Solicitud no válida | HDev AI{% endblock %}
+{% block content %}
+<section class="empty-content-state">
+    <i class="bi bi-shield-exclamation"></i>
+    <h1 class="h4">No fue posible validar la solicitud.</h1>
+    <p class="text-muted">Actualiza la página e inténtalo nuevamente.</p>
+    <a class="btn btn-primary" href="{{ url_for('home.index') }}">Ir al dashboard</a>
+</section>
+{% endblock %}

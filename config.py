@@ -23,6 +23,10 @@ class Config:
         self.FLASK_ENV = os.getenv("FLASK_ENV", self.APP_ENV)
         self.SECRET_KEY = os.getenv("SECRET_KEY")
         self.N8N_API_KEY = os.getenv("N8N_API_KEY")
+        self.N8N_INTEGRATION_ENABLED = _boolean(
+            "N8N_INTEGRATION_ENABLED",
+            True,
+        )
         self.LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
         self.APP_TIMEZONE = os.getenv("APP_TIMEZONE", "America/Mexico_City")
         self.SQLALCHEMY_DATABASE_URI = self._database_uri()
@@ -69,6 +73,18 @@ class ProductionConfig(Config):
 
     def __init__(self) -> None:
         super().__init__()
+        missing = []
+        if not isinstance(self.SECRET_KEY, str) or not self.SECRET_KEY.strip():
+            missing.append("SECRET_KEY")
+        if self.N8N_INTEGRATION_ENABLED and (
+            not isinstance(self.N8N_API_KEY, str) or not self.N8N_API_KEY.strip()
+        ):
+            missing.append("N8N_API_KEY")
+        if missing:
+            raise RuntimeError(
+                "Production configuration missing required variables: "
+                + ", ".join(missing)
+            )
         self.DEBUG = False
         self.SESSION_COOKIE_SECURE = True
         # Azure can change the proxy-observed client address between requests.
@@ -86,6 +102,7 @@ class TestingConfig(Config):
         self.DEBUG = False
         self.SECRET_KEY = "testing-only-secret"
         self.N8N_API_KEY = os.getenv("N8N_API_KEY", "test-n8n-key")
+        self.N8N_INTEGRATION_ENABLED = True
         self.LOG_LEVEL = "WARNING"
         self.APP_TIMEZONE = "America/Mexico_City"
         self.SQLALCHEMY_DATABASE_URI = "sqlite://"

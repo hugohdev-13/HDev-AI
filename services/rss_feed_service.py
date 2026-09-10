@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from datetime import datetime,timezone
 from html import unescape
 import ipaddress,re,socket
-from urllib.parse import urlparse
+from urllib.parse import urljoin, urlparse
 import feedparser,requests
 from dtos.rss_entry_dto import RSSEntryDTO
 from repositories.source_repository import SourceRepository
@@ -21,7 +21,22 @@ class RSSFeedService:
         return url
     @staticmethod
     def fetch_feed(url):
-        RSSFeedService.safe_url(url);r=requests.get(url,timeout=10,allow_redirects=True,headers={'User-Agent':'HDevAI-RSS/1.0'});r.raise_for_status();return r.content[:2_000_000]
+        current_url = RSSFeedService.safe_url(url)
+        for _ in range(4):
+            response = requests.get(
+                current_url,
+                timeout=10,
+                allow_redirects=False,
+                headers={'User-Agent': 'HDevAI-RSS/1.0'},
+            )
+            if response.status_code not in {301, 302, 303, 307, 308}:
+                response.raise_for_status()
+                return response.content[:2_000_000]
+            location = response.headers.get('Location')
+            if not location:
+                raise requests.RequestException('RSS redirect did not include a location.')
+            current_url = RSSFeedService.safe_url(urljoin(current_url, location))
+        raise requests.RequestException('RSS feed exceeded the redirect limit.')
     @staticmethod
     def parse_feed(content,limit=20):
         p=feedparser.parse(content)

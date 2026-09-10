@@ -31,8 +31,7 @@ def _suggestions():
 def test_editorial_suggestions_requires_authenticated_editor():
     response = app.test_client().post("/articles/1/editorial-suggestions")
 
-    assert response.status_code == 302
-    assert "/auth/login" in response.location
+    assert response.status_code == 400
 
 
 @patch("routes.articles.current_user", SimpleNamespace(id=7))

@@ -27,7 +27,11 @@ document.addEventListener("DOMContentLoaded", () => {
         try {
             const response = await fetch(assistant.dataset.suggestionsUrl, {
                 method: "POST",
-                headers: { "X-Requested-With": "XMLHttpRequest" },
+                headers: {
+                    "Accept": "application/json",
+                    "X-CSRFToken": window.HDevAI?.getCsrfToken?.() || "",
+                    "X-Requested-With": "XMLHttpRequest",
+                },
                 credentials: "same-origin",
             });
             const payload = await response.json();
